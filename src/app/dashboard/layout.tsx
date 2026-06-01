@@ -5,11 +5,11 @@ import { AuthGuard } from "@/components/dashboard/AuthGuard";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
-      <div className="min-h-screen flex" style={{ background: "var(--bg)" }}>
+      <div style={{ minHeight:"100vh", display:"flex", background:"#0b1121" }}>
         <DashboardSidebar />
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden" }}>
           <DashboardHeader />
-          <main className="flex-1 p-6 overflow-auto">
+          <main style={{ flex:1, padding:"clamp(16px, 3vw, 24px)", overflowY:"auto" }}>
             {children}
           </main>
         </div>

@@ -3,88 +3,79 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Users, Rocket, Camera, FolderOpen,
   DollarSign, Package, BookOpen, Calendar, ClipboardList,
   Leaf, ChevronLeft, ChevronRight, Home, Download, LogOut,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { logout } from "@/lib/auth";
 
 const NAV = [
-  { group: "Utama",     items: [{ href: "/dashboard",             label: "Overview",       icon: LayoutDashboard }] },
+  { group: "Utama", items: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }] },
   { group: "Manajemen", items: [
-    { href: "/dashboard/anggota",    label: "Anggota",        icon: Users },
-    { href: "/dashboard/proker",     label: "Program Kerja",  icon: Rocket },
-    { href: "/dashboard/keuangan",   label: "Keuangan",       icon: DollarSign },
-    { href: "/dashboard/inventory",  label: "Inventaris",     icon: Package },
+    { href: "/dashboard/anggota", label: "Anggota", icon: Users },
+    { href: "/dashboard/proker", label: "Program Kerja", icon: Rocket },
+    { href: "/dashboard/keuangan", label: "Keuangan", icon: DollarSign },
+    { href: "/dashboard/inventory", label: "Inventaris", icon: Package },
   ]},
-  { group: "Konten",    items: [
-    { href: "/dashboard/dokumentasi", label: "Dokumentasi",   icon: Camera },
-    { href: "/dashboard/arsip",       label: "Arsip Digital", icon: FolderOpen },
-    { href: "/dashboard/jurnal",      label: "Jurnal Harian", icon: BookOpen },
+  { group: "Konten", items: [
+    { href: "/dashboard/dokumentasi", label: "Dokumentasi", icon: Camera },
+    { href: "/dashboard/arsip", label: "Arsip Digital", icon: FolderOpen },
+    { href: "/dashboard/jurnal", label: "Jurnal Harian", icon: BookOpen },
   ]},
-  { group: "Kegiatan",  items: [
-    { href: "/dashboard/absensi",    label: "Absensi",        icon: ClipboardList },
-    { href: "/dashboard/piket",      label: "Jadwal Piket",   icon: Calendar },
+  { group: "Kegiatan", items: [
+    { href: "/dashboard/absensi", label: "Absensi", icon: ClipboardList },
+    { href: "/dashboard/piket", label: "Jadwal Piket", icon: Calendar },
   ]},
-  { group: "Laporan",   items: [{ href: "/dashboard/export", label: "Export Laporan", icon: Download }] },
+  { group: "Laporan", items: [{ href: "/dashboard/export", label: "Export Laporan", icon: Download }] },
 ];
 
 export default function DashboardSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
-  const router   = useRouter();
+  const router = useRouter();
+
+  const navItemStyle = (active: boolean): React.CSSProperties => ({
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: collapsed ? "10px 0" : "10px 12px",
+    justifyContent: collapsed ? "center" : "flex-start",
+    borderRadius: 10,
+    fontSize: 13,
+    fontWeight: active ? 600 : 400,
+    color: active ? "#34d399" : "#94a3b8",
+    background: active ? "rgba(16,185,129,0.1)" : "transparent",
+    textDecoration: "none",
+    transition: "all 0.15s",
+    cursor: "pointer",
+    border: "none",
+    width: "100%",
+    textAlign: "left" as const,
+  });
 
   return (
-    <motion.aside
-      animate={{ width: collapsed ? 60 : 216 }}
-      transition={{ duration: 0.22, ease: "easeInOut" }}
-      className="relative flex flex-col h-screen sticky top-0 shrink-0 overflow-hidden"
-      style={{ background: "var(--bg-2)", borderRight: "1px solid var(--border)" }}
-    >
+    <aside style={{ width: collapsed ? 60 : 220, display:"flex", flexDirection:"column", height:"100vh", position:"sticky", top:0, flexShrink:0, overflow:"hidden", background:"#0d1525", borderRight:"1px solid rgba(255,255,255,0.06)", transition:"width 0.2s ease" }} className="max-md:!hidden">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 h-[60px] shrink-0"
-        style={{ borderBottom: "1px solid var(--border)" }}>
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
-          <Leaf className="w-4 h-4 text-white" />
+      <div style={{ display:"flex", alignItems:"center", gap:12, padding:"0 16px", height:60, borderBottom:"1px solid rgba(255,255,255,0.06)", flexShrink:0 }}>
+        <div style={{ width:32, height:32, borderRadius:8, background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+          <Leaf style={{ width:16, height:16, color:"#fff" }} />
         </div>
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.div initial={{ opacity:0, x:-6 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-6 }} transition={{ duration:.12 }}>
-              <p className="text-white font-bold text-sm leading-none">KKN 146</p>
-              <p className="text-emerald-400 text-[11px] mt-0.5">Dashboard</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {!collapsed && <div><p style={{ color:"#fff", fontWeight:700, fontSize:13 }}>KKN 146</p><p style={{ color:"#34d399", fontSize:11 }}>Dashboard</p></div>}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-5">
+      <nav style={{ flex:1, overflowY:"auto", padding:"16px 8px" }}>
         {NAV.map(({ group, items }) => (
-          <div key={group}>
-            {!collapsed && (
-              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color:"var(--t3)" }}>
-                {group}
-              </p>
-            )}
-            <div className="space-y-0.5">
+          <div key={group} style={{ marginBottom:20 }}>
+            {!collapsed && <p style={{ padding:"0 12px", marginBottom:6, fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.1em", color:"#475569" }}>{group}</p>}
+            <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
               {items.map((item) => {
                 const active = pathname === item.href;
                 return (
-                  <Link key={item.href} href={item.href}>
-                    <div className={cn("nitem", active && "active", collapsed && "justify-center px-0")}
-                      title={collapsed ? item.label : undefined}>
-                      <item.icon className="w-[17px] h-[17px] shrink-0" />
-                      <AnimatePresence>
-                        {!collapsed && (
-                          <motion.span initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:.1 }}>
-                            {item.label}
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                  <Link key={item.href} href={item.href} style={navItemStyle(active)} title={collapsed ? item.label : undefined}>
+                    <item.icon style={{ width:17, height:17, flexShrink:0 }} />
+                    {!collapsed && <span>{item.label}</span>}
                   </Link>
                 );
               })}
@@ -94,27 +85,22 @@ export default function DashboardSidebar() {
       </nav>
 
       {/* Bottom */}
-      <div className="px-2 py-3 space-y-0.5 shrink-0" style={{ borderTop:"1px solid var(--border)" }}>
-        <Link href="/">
-          <div className={cn("nitem", collapsed && "justify-center px-0")} title={collapsed?"Landing Page":undefined}>
-            <Home className="w-[17px] h-[17px] shrink-0" />
-            {!collapsed && <span>Landing Page</span>}
-          </div>
+      <div style={{ padding:"12px 8px", borderTop:"1px solid rgba(255,255,255,0.06)", flexShrink:0 }}>
+        <Link href="/" style={navItemStyle(false)}>
+          <Home style={{ width:17, height:17, flexShrink:0 }} />
+          {!collapsed && <span>Landing Page</span>}
         </Link>
-        <button onClick={() => { logout(); router.replace("/login"); }}
-          className={cn("w-full nitem hover:!text-red-400 hover:!bg-red-500/10", collapsed && "justify-center px-0")}
-          title={collapsed?"Keluar":undefined}>
-          <LogOut className="w-[17px] h-[17px] shrink-0" />
+        <button onClick={() => { logout(); router.replace("/login"); }} style={{ ...navItemStyle(false), color:"#f87171" }}>
+          <LogOut style={{ width:17, height:17, flexShrink:0 }} />
           {!collapsed && <span>Keluar</span>}
         </button>
       </div>
 
       {/* Collapse toggle */}
       <button onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-[72px] w-6 h-6 rounded-full flex items-center justify-center z-10 shadow-lg transition-colors"
-        style={{ background:"var(--bg-3)", border:"1px solid var(--border-2)", color:"var(--t2)" }}>
-        {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
+        style={{ position:"absolute", right:-12, top:72, width:24, height:24, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", background:"#111b2e", border:"1px solid rgba(255,255,255,0.1)", color:"#94a3b8", cursor:"pointer", zIndex:10 }}>
+        {collapsed ? <ChevronRight style={{ width:12, height:12 }} /> : <ChevronLeft style={{ width:12, height:12 }} />}
       </button>
-    </motion.aside>
+    </aside>
   );
 }

@@ -6,13 +6,11 @@ import TeamSection from "@/components/sections/TeamSection";
 import ProkerSection from "@/components/sections/ProkerSection";
 import TimelineSection from "@/components/sections/TimelineSection";
 import DokumentasiSection from "@/components/sections/DokumentasiSection";
-import KeuanganSection from "@/components/sections/KeuanganSection";
-import InventorySection from "@/components/sections/InventorySection";
 import KontakSection from "@/components/sections/KontakSection";
 
 export default function Home() {
   return (
-    <main style={{ background: "var(--bg)" }}>
+    <main className="bg-[#0b1121]">
       <Navbar />
       <HeroSection />
       <TentangDesaSection />
@@ -20,8 +18,6 @@ export default function Home() {
       <ProkerSection />
       <TimelineSection />
       <DokumentasiSection />
-      <KeuanganSection />
-      <InventorySection />
       <KontakSection />
       <Footer />
     </main>

@@ -6,14 +6,15 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, Leaf, Lock, User, AlertCircle, ArrowLeft } from "lucide-react";
 import { login, isAuthenticated } from "@/lib/auth";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [error, setError]       = useState("");
-  const [loading, setLoading]   = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated()) router.replace("/dashboard");
@@ -23,7 +24,6 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 500));
     if (login(username, password)) {
       router.replace("/dashboard");
     } else {
@@ -33,97 +33,98 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
-      style={{ background: "var(--bg)" }}>
-      {/* Background */}
-      <div className="orb absolute top-1/4 left-1/4 w-80 h-80 pointer-events-none" style={{ background: "rgba(16,185,129,0.06)" }} />
-      <div className="orb absolute bottom-1/4 right-1/4 w-64 h-64 pointer-events-none" style={{ background: "rgba(6,182,212,0.06)", animationDelay: "-5s" }} />
-      <div className="grid-overlay absolute inset-0 pointer-events-none" />
+    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:24, background:"#0b1121", position:"relative", overflow:"hidden" }}>
+      {/* Background Image */}
+      <div style={{ position:"absolute", inset:0 }}>
+        <Image src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80" alt="" fill style={{ objectFit:"cover", opacity:0.08 }} sizes="100vw" />
+        <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at center, rgba(11,17,33,0.7), #0b1121)" }} />
+      </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-[380px]"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        style={{ position:"relative", zIndex:10, width:"100%", maxWidth:400 }}
       >
         {/* Back link */}
-        <Link href="/" className="flex items-center gap-1.5 text-xs mb-6 transition-colors"
-          style={{ color: "var(--t3)" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--t2)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--t3)"; }}>
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Kembali ke Landing Page
+        <Link href="/" style={{ display:"flex", alignItems:"center", gap:6, fontSize:13, color:"#64748b", textDecoration:"none", marginBottom:24 }}>
+          <ArrowLeft style={{ width:14, height:14 }} /> Kembali ke Landing Page
         </Link>
 
         {/* Card */}
-        <div className="rounded-2xl overflow-hidden shadow-2xl"
-          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div style={{ background:"#111b2e", border:"1px solid rgba(255,255,255,0.06)", borderRadius:20, overflow:"hidden", boxShadow:"0 25px 50px -12px rgba(0,0,0,0.5)" }}>
           {/* Accent bar */}
-          <div className="h-1 bg-gradient-to-r from-emerald-500 to-cyan-500" />
+          <div style={{ height:3, background:"linear-gradient(to right, #10b981, #06b6d4)" }} />
 
-          <div className="p-8">
+          <div style={{ padding:32 }}>
             {/* Logo */}
-            <div className="flex flex-col items-center mb-8">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/25 mb-4">
-                <Leaf className="w-7 h-7 text-white" />
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", marginBottom:32 }}>
+              <div style={{ width:56, height:56, borderRadius:16, background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 10px 25px rgba(16,185,129,0.2)", marginBottom:16 }}>
+                <Leaf style={{ width:28, height:28, color:"#fff" }} />
               </div>
-              <h1 className="text-white font-bold text-lg text-center">KKN 146 Dashboard</h1>
-              <p className="text-sm mt-1 text-center" style={{ color: "var(--t2)" }}>Masuk sebagai Admin</p>
+              <h1 style={{ color:"#fff", fontWeight:700, fontSize:20, textAlign:"center" }}>KKN 146 Dashboard</h1>
+              <p style={{ color:"#94a3b8", fontSize:14, marginTop:4, textAlign:"center" }}>Masuk sebagai Admin</p>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="lbl">Username</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--t3)" }} />
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom:16 }}>
+                <label style={{ display:"block", fontSize:12, fontWeight:600, color:"#94a3b8", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:8 }}>Username</label>
+                <div style={{ position:"relative" }}>
+                  <User style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", width:16, height:16, color:"#475569", pointerEvents:"none" }} />
                   <input type="text" value={username} onChange={(e) => setUsername(e.target.value)}
-                    required autoComplete="username" placeholder="admin" className="inp pl-10" />
+                    required autoComplete="username" placeholder="admin"
+                    style={{ width:"100%", padding:"12px 12px 12px 40px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:12, color:"#fff", fontSize:14, outline:"none" }}
+                    onFocus={(e) => e.target.style.borderColor = "rgba(16,185,129,0.4)"}
+                    onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.08)"} />
                 </div>
               </div>
 
-              <div>
-                <label className="lbl">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--t3)" }} />
+              <div style={{ marginBottom:16 }}>
+                <label style={{ display:"block", fontSize:12, fontWeight:600, color:"#94a3b8", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:8 }}>Password</label>
+                <div style={{ position:"relative" }}>
+                  <Lock style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", width:16, height:16, color:"#475569", pointerEvents:"none" }} />
                   <input type={showPass ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
-                    required autoComplete="current-password" placeholder="••••••••" className="inp pl-10 pr-10" />
+                    required autoComplete="current-password" placeholder="••••••••"
+                    style={{ width:"100%", padding:"12px 40px 12px 40px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:12, color:"#fff", fontSize:14, outline:"none" }}
+                    onFocus={(e) => e.target.style.borderColor = "rgba(16,185,129,0.4)"}
+                    onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.08)"} />
                   <button type="button" onClick={() => setShowPass((v) => !v)} tabIndex={-1}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-                    style={{ color: "var(--t3)" }}>
-                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"#475569" }}>
+                    {showPass ? <EyeOff style={{ width:16, height:16 }} /> : <Eye style={{ width:16, height:16 }} />}
                   </button>
                 </div>
               </div>
 
               {error && (
-                <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm"
-                  style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}>
-                  <AlertCircle className="w-4 h-4 shrink-0" />
+                <motion.div initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:0 }}
+                  style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 16px", borderRadius:12, fontSize:13, background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.2)", color:"#f87171", marginBottom:16 }}>
+                  <AlertCircle style={{ width:16, height:16, flexShrink:0 }} />
                   {error}
                 </motion.div>
               )}
 
               <button type="submit" disabled={loading}
-                className="btn btn-primary w-full py-3.5 text-[15px] disabled:opacity-60 mt-2">
+                style={{ width:"100%", padding:"14px 0", background:"linear-gradient(to right, #10b981, #06b6d4)", color:"#fff", fontWeight:700, fontSize:15, borderRadius:12, border:"none", cursor:"pointer", marginTop:8, opacity: loading ? 0.6 : 1, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
                 {loading
-                  ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />Masuk...</>
+                  ? <><span style={{ width:16, height:16, border:"2px solid rgba(255,255,255,0.3)", borderTopColor:"#fff", borderRadius:"50%", animation:"spin 0.6s linear infinite", display:"inline-block" }} />Masuk...</>
                   : "Masuk ke Dashboard"
                 }
               </button>
             </form>
 
-            <p className="text-xs text-center mt-6 leading-relaxed" style={{ color: "var(--t3)" }}>
+            <p style={{ fontSize:12, textAlign:"center", marginTop:24, color:"#475569", lineHeight:1.5 }}>
               Halaman ini hanya untuk admin KKN 146.
             </p>
           </div>
         </div>
 
-        <p className="text-xs text-center mt-5" style={{ color: "var(--t3)" }}>
+        <p style={{ fontSize:12, textAlign:"center", marginTop:20, color:"#475569" }}>
           KKN 146 · Desa Talang Marap · Universitas Bengkulu
         </p>
       </motion.div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

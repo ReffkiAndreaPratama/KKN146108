@@ -17,7 +17,7 @@ export const timelineEvents: TimelineEvent[] = [
     description:
       "Pembekalan KKN dari universitas, persiapan perlengkapan, rapat koordinasi tim, dan finalisasi program kerja.",
     date: "2026-05-16",
-    endDate: "2026-05-27",
+    endDate: "2026-06-16",
     status: "completed",
     icon: "BookOpen",
   },
@@ -26,7 +26,7 @@ export const timelineEvents: TimelineEvent[] = [
     title: "Keberangkatan ke Lokasi",
     description:
       "Seluruh anggota KKN 146 berangkat menuju Desa Talang Marap, Kecamatan Kelam Tengah, Kabupaten Kaur.",
-    date: "2026-05-28",
+    date: "2026-06-17",
     status: "completed",
     icon: "Car",
   },
@@ -35,7 +35,7 @@ export const timelineEvents: TimelineEvent[] = [
     title: "Penerimaan & Pembukaan KKN",
     description:
       "Acara penerimaan resmi KKN 146 oleh Kepala Desa Talang Marap dan perangkat desa.",
-    date: "2026-05-29",
+    date: "2026-06-18",
     status: "completed",
     icon: "Users",
   },
@@ -44,8 +44,8 @@ export const timelineEvents: TimelineEvent[] = [
     title: "Pelaksanaan Program Kerja",
     description:
       "Pelaksanaan seluruh program kerja KKN 146 meliputi pendidikan, sosial, teknologi, lingkungan, UMKM, kesehatan, dan keagamaan.",
-    date: "2026-06-01",
-    endDate: "2026-07-25",
+    date: "2026-06-18",
+    endDate: "2026-07-28",
     status: "ongoing",
     icon: "Rocket",
   },
@@ -54,7 +54,7 @@ export const timelineEvents: TimelineEvent[] = [
     title: "Monitoring & Evaluasi",
     description:
       "Evaluasi tengah periode pelaksanaan KKN, monitoring progress program kerja, dan penyesuaian rencana.",
-    date: "2026-07-01",
+    date: "2026-07-10",
     status: "upcoming",
     icon: "BarChart",
   },
@@ -63,7 +63,7 @@ export const timelineEvents: TimelineEvent[] = [
     title: "Penutupan & Perpisahan",
     description:
       "Acara penutupan resmi KKN 146 bersama seluruh warga Desa Talang Marap, penyerahan hasil program kerja.",
-    date: "2026-07-28",
+    date: "2026-07-30",
     status: "upcoming",
     icon: "Award",
   },
@@ -72,7 +72,7 @@ export const timelineEvents: TimelineEvent[] = [
     title: "Kepulangan",
     description:
       "Seluruh anggota KKN 146 kembali ke Universitas Bengkulu.",
-    date: "2026-07-30",
+    date: "2026-07-31",
     status: "upcoming",
     icon: "Home",
   },

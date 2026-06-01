@@ -1,205 +1,101 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import {
-  ClipboardList, CheckCircle2, XCircle, AlertCircle, Clock,
-  ChevronLeft, ChevronRight, Download,
-} from "lucide-react";
+import { ClipboardList, CheckCircle2, XCircle, AlertCircle, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMembers } from "@/hooks/useMembers";
 import { members as seedMembers } from "@/data/members";
-import { ExportButton } from "@/components/ui/ExportButton";
-import { exportAbsensiPDF, exportAbsensiExcel } from "@/lib/export";
-import { cn } from "@/lib/utils";
 import type { MemberRow } from "@/types/database";
 
-type AttendanceStatus = "hadir" | "izin" | "sakit" | "alpha";
+const card: React.CSSProperties = { background:"#111b2e", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16 };
 
-const STATUS_CFG: Record<AttendanceStatus, {
-  label: string; icon: React.ElementType;
-  cls: string; activeCls: string; dot: string;
-}> = {
-  hadir: { label: "Hadir",  icon: CheckCircle2, cls: "text-emerald-400", activeCls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25", dot: "bg-emerald-500" },
-  izin:  { label: "Izin",   icon: Clock,        cls: "text-amber-400",   activeCls: "bg-amber-500/15 text-amber-400 border-amber-500/25",   dot: "bg-amber-500" },
-  sakit: { label: "Sakit",  icon: AlertCircle,  cls: "text-blue-400",    activeCls: "bg-blue-500/15 text-blue-400 border-blue-500/25",     dot: "bg-blue-500" },
-  alpha: { label: "Alpha",  icon: XCircle,      cls: "text-red-400",     activeCls: "bg-red-500/15 text-red-400 border-red-500/25",       dot: "bg-red-500" },
+type Status = "hadir" | "izin" | "sakit" | "alpha";
+const STATUS_CFG: Record<Status, { label:string; color:string; icon:typeof CheckCircle2 }> = {
+  hadir: { label:"Hadir", color:"#34d399", icon:CheckCircle2 },
+  izin: { label:"Izin", color:"#fbbf24", icon:Clock },
+  sakit: { label:"Sakit", color:"#60a5fa", icon:AlertCircle },
+  alpha: { label:"Alpha", color:"#f87171", icon:XCircle },
 };
 
-function addDays(date: string, n: number): string {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n);
-  return d.toISOString().split("T")[0];
-}
-
-function fmtDate(d: string): string {
-  return new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date(d));
-}
+function fmtDate(d: string) { return new Intl.DateTimeFormat("id-ID", { weekday:"long", day:"numeric", month:"long", year:"numeric" }).format(new Date(d)); }
+function addDays(d: string, n: number) { const dt = new Date(d); dt.setDate(dt.getDate()+n); return dt.toISOString().split("T")[0]; }
 
 export default function AbsensiPage() {
   const { data: dbMembers } = useMembers();
-  const allMembers: MemberRow[] = dbMembers ?? (seedMembers as unknown as MemberRow[]);
-
+  const allMembers = (dbMembers ?? seedMembers) as unknown as MemberRow[];
   const today = new Date().toISOString().split("T")[0];
   const [date, setDate] = useState(today);
+  const [records, setRecords] = useState<Record<string, Record<string, Status>>>({});
 
-  // attendance state: { [date]: { [memberId]: status } }
-  const [records, setRecords] = useState<Record<string, Record<string, AttendanceStatus>>>({});
+  const getStatus = (id: string): Status => records[date]?.[id] ?? "hadir";
+  const setStatus = (id: string, s: Status) => setRecords((p) => ({ ...p, [date]: { ...(p[date]??{}), [id]: s } }));
 
-  const getStatus = (memberId: string): AttendanceStatus =>
-    records[date]?.[memberId] ?? "hadir";
-
-  const setStatus = (memberId: string, status: AttendanceStatus) => {
-    setRecords((prev) => ({
-      ...prev,
-      [date]: { ...(prev[date] ?? {}), [memberId]: status },
-    }));
-  };
-
-  const counts = (Object.keys(STATUS_CFG) as AttendanceStatus[]).reduce((acc, s) => {
-    acc[s] = allMembers.filter((m) => getStatus(m.id) === s).length;
-    return acc;
-  }, {} as Record<AttendanceStatus, number>);
-
-  const attendanceData = allMembers.map((m) => ({
-    name: m.name,
-    date,
-    status: getStatus(m.id),
-    note: null,
-  }));
-
-  const getColor = (m: MemberRow) =>
-    (m as unknown as { color?: string }).color ?? "from-emerald-500 to-cyan-500";
-  const getInit = (m: MemberRow) =>
-    (m as unknown as { initials?: string }).initials ?? m.name[0];
+  const counts = (Object.keys(STATUS_CFG) as Status[]).reduce((a, s) => { a[s] = allMembers.filter((m) => getStatus(m.id) === s).length; return a; }, {} as Record<Status, number>);
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Absensi</h1>
-          <p className="text-slate-500 text-sm mt-1">Rekap kehadiran anggota KKN 146</p>
-        </div>
-        <ExportButton
-          options={[
-            { label: "Export PDF",   format: "pdf",   onClick: () => exportAbsensiPDF(attendanceData, date) },
-            { label: "Export Excel", format: "excel", onClick: () => exportAbsensiExcel(attendanceData) },
-          ]}
-        />
+    <div style={{ maxWidth:900, display:"flex", flexDirection:"column", gap:24 }}>
+      <div style={{ ...card, padding:24 }}>
+        <h1 style={{ fontSize:20, fontWeight:700, color:"#fff" }}>Absensi</h1>
+        <p style={{ fontSize:14, color:"#94a3b8", marginTop:4 }}>Rekap kehadiran anggota KKN 146</p>
       </div>
 
-      {/* ── Date Navigator ── */}
-      <div className="flex items-center gap-3 p-4 rounded-2xl bg-[#111827] border border-white/[0.07]">
-        <button
-          onClick={() => setDate(addDays(date, -1))}
-          className="p-2 rounded-xl bg-white/[0.05] text-slate-400 hover:text-white hover:bg-white/[0.09] transition-all"
-        >
-          <ChevronLeft className="w-4 h-4" />
+      {/* Date Nav */}
+      <div style={{ ...card, padding:16, display:"flex", alignItems:"center", gap:12 }}>
+        <button onClick={() => setDate(addDays(date,-1))} style={{ width:36, height:36, borderRadius:10, background:"rgba(255,255,255,0.04)", border:"none", color:"#94a3b8", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <ChevronLeft style={{ width:16, height:16 }} />
         </button>
-        <div className="flex-1 text-center">
-          <p className="text-white font-semibold text-sm">{fmtDate(date)}</p>
-          {date === today && (
-            <span className="inline-flex items-center gap-1 text-emerald-400 text-xs mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Hari Ini
-            </span>
-          )}
+        <div style={{ flex:1, textAlign:"center" }}>
+          <p style={{ color:"#fff", fontWeight:600, fontSize:14 }}>{fmtDate(date)}</p>
+          {date === today && <p style={{ color:"#34d399", fontSize:11, marginTop:2 }}>Hari Ini</p>}
         </div>
-        <button
-          onClick={() => setDate(addDays(date, 1))}
-          className="p-2 rounded-xl bg-white/[0.05] text-slate-400 hover:text-white hover:bg-white/[0.09] transition-all"
-        >
-          <ChevronRight className="w-4 h-4" />
+        <button onClick={() => setDate(addDays(date,1))} style={{ width:36, height:36, borderRadius:10, background:"rgba(255,255,255,0.04)", border:"none", color:"#94a3b8", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <ChevronRight style={{ width:16, height:16 }} />
         </button>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="input w-auto py-2 text-sm ml-2"
-        />
       </div>
 
-      {/* ── Summary Cards ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {(Object.entries(STATUS_CFG) as [AttendanceStatus, typeof STATUS_CFG[AttendanceStatus]][]).map(([key, cfg]) => (
-          <div key={key} className={cn("p-4 rounded-2xl border text-center", cfg.activeCls)}>
-            <cfg.icon className={cn("w-5 h-5 mx-auto mb-2", cfg.cls)} />
-            <p className={cn("font-bold text-2xl leading-none", cfg.cls)}>{counts[key]}</p>
-            <p className="text-slate-400 text-xs mt-1.5">{cfg.label}</p>
+      {/* Summary */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:12 }} className="max-sm:!grid-cols-2">
+        {(Object.entries(STATUS_CFG) as [Status, typeof STATUS_CFG[Status]][]).map(([key, cfg]) => (
+          <div key={key} style={{ ...card, padding:16, textAlign:"center", borderColor:`${cfg.color}25`, background:`${cfg.color}08` }}>
+            <cfg.icon style={{ width:20, height:20, color:cfg.color, margin:"0 auto 8px" }} />
+            <p style={{ color:cfg.color, fontWeight:700, fontSize:20 }}>{counts[key]}</p>
+            <p style={{ color:"#94a3b8", fontSize:11, marginTop:2 }}>{cfg.label}</p>
           </div>
         ))}
       </div>
 
-      {/* ── Attendance List ── */}
-      <div className="rounded-2xl bg-[#111827] border border-white/[0.07] overflow-hidden">
-        <div className="flex items-center gap-2.5 px-6 py-4 border-b border-white/[0.06]">
-          <ClipboardList className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-white font-semibold text-sm">Daftar Hadir</h3>
-          <span className="ml-auto text-slate-500 text-xs">{allMembers.length} anggota</span>
+      {/* List */}
+      <div style={{ ...card, overflow:"hidden" }}>
+        <div style={{ padding:"16px 24px", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", alignItems:"center", gap:10 }}>
+          <ClipboardList style={{ width:16, height:16, color:"#34d399" }} />
+          <span style={{ fontSize:14, fontWeight:600, color:"#fff" }}>Daftar Hadir</span>
         </div>
-
-        <div className="divide-y divide-white/[0.05]">
-          {allMembers.map((member, i) => {
-            const current = getStatus(member.id);
-            return (
-              <motion.div
-                key={member.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.04 }}
-                className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors"
-              >
-                {/* Member info */}
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center text-white text-sm font-bold shrink-0",
-                    getColor(member)
-                  )}>
-                    {getInit(member)}
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold text-sm">{member.name}</p>
-                    <p className="text-slate-500 text-xs">{member.role}</p>
-                  </div>
+        {allMembers.map((m, i) => {
+          const current = getStatus(m.id);
+          return (
+            <div key={m.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 24px", borderBottom: i < allMembers.length-1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                <div style={{ width:32, height:32, borderRadius:10, background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:11, fontWeight:700 }}>
+                  {m.name.split(" ").map(w=>w[0]).join("").slice(0,2)}
                 </div>
-
-                {/* Status buttons */}
-                <div className="flex gap-1.5">
-                  {(Object.entries(STATUS_CFG) as [AttendanceStatus, typeof STATUS_CFG[AttendanceStatus]][]).map(([key, cfg]) => (
-                    <button
-                      key={key}
-                      onClick={() => setStatus(member.id, key)}
-                      className={cn(
-                        "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
-                        current === key
-                          ? cfg.activeCls
-                          : "bg-white/[0.04] text-slate-500 border-white/[0.08] hover:bg-white/[0.07] hover:text-slate-300"
-                      )}
-                    >
-                      <cfg.icon className="w-3 h-3" />
-                      <span className="hidden sm:inline">{cfg.label}</span>
-                    </button>
-                  ))}
+                <div>
+                  <p style={{ color:"#fff", fontSize:13, fontWeight:500 }}>{m.name}</p>
+                  <p style={{ color:"#64748b", fontSize:11 }}>{m.role}</p>
                 </div>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Footer summary */}
-        <div className="px-6 py-3 border-t border-white/[0.06] flex items-center gap-4 flex-wrap">
-          {(Object.entries(STATUS_CFG) as [AttendanceStatus, typeof STATUS_CFG[AttendanceStatus]][]).map(([key, cfg]) => (
-            <div key={key} className="flex items-center gap-1.5">
-              <div className={cn("w-2 h-2 rounded-full", cfg.dot)} />
-              <span className="text-slate-400 text-xs">{cfg.label}: <span className="text-white font-semibold">{counts[key]}</span></span>
+              </div>
+              <div style={{ display:"flex", gap:6 }}>
+                {(Object.entries(STATUS_CFG) as [Status, typeof STATUS_CFG[Status]][]).map(([key, cfg]) => (
+                  <button key={key} onClick={() => setStatus(m.id, key)}
+                    style={{ padding:"6px 12px", borderRadius:8, fontSize:11, fontWeight:600, cursor:"pointer", border:"1px solid", display:"flex", alignItems:"center", gap:4,
+                      background: current===key ? `${cfg.color}15` : "rgba(255,255,255,0.03)",
+                      color: current===key ? cfg.color : "#64748b",
+                      borderColor: current===key ? `${cfg.color}30` : "rgba(255,255,255,0.06)" }}>
+                    <cfg.icon style={{ width:12, height:12 }} />{cfg.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          ))}
-          <span className="ml-auto text-slate-500 text-xs">
-            Kehadiran: <span className="text-emerald-400 font-semibold">
-              {Math.round((counts.hadir / allMembers.length) * 100)}%
-            </span>
-          </span>
-        </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -1,241 +1,186 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { DollarSign, Plus, TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, X, Save } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, Plus, X, Save, Trash2 } from "lucide-react";
 import { useTransactions, useCreateTransaction, useDeleteTransaction } from "@/hooks/useTransactions";
 import { transactions as seedTx, budgetSummary } from "@/data/finance";
 import { Modal } from "@/components/ui/Modal";
-import { ExportButton } from "@/components/ui/ExportButton";
-import { exportKeuanganPDF, exportKeuanganExcel } from "@/lib/export";
-import { formatCurrency, formatDate, cn } from "@/lib/utils";
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import type { TransactionRow } from "@/types/database";
 import type { TransactionPayload } from "@/hooks/useTransactions";
 
-const MONTHLY = [
-  { month: "Mei",    income: 1600000, expense: 3100000 },
-  { month: "Jun W1", income: 1400000, expense: 1530000 },
-  { month: "Jun W2", income: 1400000, expense: 1400000 },
-];
+const card: React.CSSProperties = { background:"#111b2e", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16 };
+const inputStyle: React.CSSProperties = { width:"100%", padding:"10px 14px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:10, color:"#fff", fontSize:13, outline:"none" };
+const labelStyle: React.CSSProperties = { display:"block", fontSize:11, fontWeight:600, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6 };
+const btnPrimary: React.CSSProperties = { padding:"10px 18px", background:"linear-gradient(to right, #10b981, #06b6d4)", color:"#fff", fontWeight:600, fontSize:13, borderRadius:10, border:"none", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
+const btnGhost: React.CSSProperties = { padding:"10px 18px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.06)", color:"#94a3b8", fontWeight:600, fontSize:13, borderRadius:10, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
+const btnDanger: React.CSSProperties = { padding:"10px 18px", background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.2)", color:"#f87171", fontWeight:600, fontSize:13, borderRadius:10, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
 
-const CATS = ["Iuran", "Iuran Pangan", "Transportasi", "Akomodasi", "Konsumsi", "ATK", "Perlengkapan", "Lainnya"];
-
-const EMPTY: TransactionPayload = {
-  type: "expense", description: "", amount: 0,
-  date: new Date().toISOString().split("T")[0], category: "Lainnya", created_by: "Admin",
-};
-
-function TxForm({ open, onClose, onSave, saving }: {
-  open: boolean; onClose: () => void; onSave: (d: TransactionPayload) => void; saving: boolean;
-}) {
-  const [form, setForm] = useState<TransactionPayload>(EMPTY);
-  const set = (k: keyof TransactionPayload, v: string | number) => setForm((p) => ({ ...p, [k]: v }));
-
-  return (
-    <Modal open={open} onClose={onClose} title="Tambah Transaksi" size="md">
-      <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className="space-y-4">
-        <div>
-          <label className="label">Tipe Transaksi</label>
-          <div className="flex rounded-xl p-1" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--c-border)" }}>
-            {(["income", "expense"] as const).map((t) => (
-              <button key={t} type="button" onClick={() => set("type", t)}
-                className={cn("flex-1 py-2 rounded-lg text-sm font-semibold transition-all",
-                  form.type === t ? (t === "income" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400") : "hover:text-white"
-                )}
-                style={{ color: form.type === t ? undefined : "var(--c-text-2)" }}>
-                {t === "income" ? "Pemasukan" : "Pengeluaran"}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div><label className="label">Deskripsi *</label>
-          <input value={form.description} onChange={(e) => set("description", e.target.value)} required placeholder="Keterangan transaksi" className="input" /></div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="label">Jumlah (Rp) *</label>
-            <input type="number" value={form.amount || ""} onChange={(e) => set("amount", parseInt(e.target.value) || 0)} required min={1} placeholder="0" className="input" /></div>
-          <div><label className="label">Tanggal *</label>
-            <input type="date" value={form.date} onChange={(e) => set("date", e.target.value)} required className="input" /></div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="label">Kategori</label>
-            <select value={form.category} onChange={(e) => set("category", e.target.value)} className="input">
-              {CATS.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select></div>
-          <div><label className="label">Dicatat oleh</label>
-            <input value={form.created_by} onChange={(e) => set("created_by", e.target.value)} placeholder="Nama" className="input" /></div>
-        </div>
-        <div className="flex gap-3 pt-2">
-          <button type="submit" disabled={saving} className="btn btn-primary flex-1 disabled:opacity-60">
-            {saving ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />Menyimpan...</> : <><Save className="w-4 h-4" />Simpan</>}
-          </button>
-          <button type="button" onClick={onClose} className="btn btn-ghost px-5"><X className="w-4 h-4" />Batal</button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
+const CATS = ["Iuran","Iuran Pangan","Transportasi","Akomodasi","Konsumsi","ATK","Perlengkapan","Lainnya"];
+const EMPTY: TransactionPayload = { type:"expense", description:"", amount:0, date:new Date().toISOString().split("T")[0], category:"Lainnya", created_by:"Admin" };
 
 export default function KeuanganPage() {
-  const { data: dbTx, isLoading } = useTransactions();
+  const { data: dbTx } = useTransactions();
   const createTx = useCreateTransaction();
   const deleteTx = useDeleteTransaction();
 
-  const [showForm, setShow] = useState(false);
-  const [deleteId, setDel]  = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [form, setForm] = useState<TransactionPayload>(EMPTY);
 
   const all = (dbTx ?? seedTx) as unknown as TransactionRow[];
-  const income  = all.filter((t) => t.type === "income").reduce((a, t) => a + t.amount, 0);
+  const income = all.filter((t) => t.type === "income").reduce((a, t) => a + t.amount, 0);
   const expense = all.filter((t) => t.type === "expense").reduce((a, t) => a + t.amount, 0);
   const balance = income - expense;
 
-  const summaries = [
-    { label: "Total Pemasukan",   value: income,   icon: TrendingUp,   accent: "#10b981" },
-    { label: "Total Pengeluaran", value: expense,  icon: TrendingDown, accent: "#ef4444" },
-    { label: "Saldo Tersisa",     value: balance,  icon: Wallet,       accent: "#06b6d4" },
-  ];
-
   return (
-    <div className="space-y-6">
+    <div style={{ maxWidth:1100, display:"flex", flexDirection:"column", gap:24 }}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div style={{ ...card, padding:24, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16 }}>
         <div>
-          <h1 className="text-xl font-bold text-white">Keuangan</h1>
-          <p className="text-sm mt-0.5" style={{ color: "var(--c-text-2)" }}>Laporan keuangan KKN 146 Desa Talang Marap</p>
+          <h1 style={{ fontSize:20, fontWeight:700, color:"#fff" }}>Keuangan</h1>
+          <p style={{ fontSize:14, color:"#94a3b8", marginTop:4 }}>Laporan keuangan KKN 146 Desa Talang Marap</p>
         </div>
-        <div className="flex gap-2 self-start sm:self-auto">
-          <ExportButton options={[
-            { label: "Export PDF",   format: "pdf",   onClick: () => exportKeuanganPDF(all) },
-            { label: "Export Excel", format: "excel", onClick: () => exportKeuanganExcel(all) },
-          ]} />
-          <button onClick={() => setShow(true)} className="btn btn-primary"><Plus className="w-4 h-4" />Tambah</button>
-        </div>
+        <button onClick={() => setShowForm(true)} style={btnPrimary}><Plus style={{ width:16, height:16 }} /> Tambah Transaksi</button>
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {summaries.map((s, i) => (
-          <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-            className="card" style={{ padding: "24px", background: `${s.accent}0d`, border: `1px solid ${s.accent}25` }}>
-            <s.icon className="w-5 h-5 mb-3" style={{ color: s.accent }} />
-            <p className="text-white font-bold text-2xl leading-none mb-1.5">{formatCurrency(s.value)}</p>
-            <p className="text-sm font-medium" style={{ color: s.accent }}>{s.label}</p>
-          </motion.div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:16 }} className="max-sm:!grid-cols-1">
+        {[
+          { label:"Total Pemasukan", value:income, icon:TrendingUp, color:"#10b981" },
+          { label:"Total Pengeluaran", value:expense, icon:TrendingDown, color:"#ef4444" },
+          { label:"Saldo Tersisa", value:balance, icon:Wallet, color:"#06b6d4" },
+        ].map((s) => (
+          <div key={s.label} style={{ ...card, padding:24, borderColor:`${s.color}25`, background:`${s.color}08` }}>
+            <s.icon style={{ width:20, height:20, color:s.color, marginBottom:12 }} />
+            <p style={{ color:"#fff", fontWeight:700, fontSize:22 }}>{formatCurrency(s.value)}</p>
+            <p style={{ color:s.color, fontSize:13, fontWeight:600, marginTop:4 }}>{s.label}</p>
+          </div>
         ))}
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="card" style={{ padding: "24px" }}>
-          <h3 className="text-white font-semibold text-sm mb-5">Distribusi Pengeluaran</h3>
-          <div className="flex items-center gap-5">
-            <div className="shrink-0">
-              <ResponsiveContainer width={160} height={160}>
-                <PieChart>
-                  <Pie data={budgetSummary.categories} cx="50%" cy="50%" innerRadius={48} outerRadius={72} dataKey="amount" strokeWidth={0}>
-                    {budgetSummary.categories.map((e, idx) => <Cell key={idx} fill={e.color} />)}
-                  </Pie>
-                </PieChart>
+      {/* Chart + Categories */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }} className="max-md:!grid-cols-1">
+        <div style={{ ...card, padding:24 }}>
+          <h3 style={{ color:"#fff", fontWeight:600, fontSize:14, marginBottom:20 }}>Distribusi Pengeluaran</h3>
+          <div style={{ display:"flex", alignItems:"center", gap:24 }}>
+            <div style={{ width:140, height:140, flexShrink:0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart><Pie data={budgetSummary.categories} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="amount" strokeWidth={0}>
+                  {budgetSummary.categories.map((e, i) => <Cell key={i} fill={e.color} />)}
+                </Pie></PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex-1 space-y-2.5 min-w-0">
+            <div style={{ flex:1, display:"flex", flexDirection:"column", gap:8 }}>
               {budgetSummary.categories.map((cat) => (
-                <div key={cat.name} className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} />
-                    <span className="text-xs truncate" style={{ color: "var(--c-text-2)" }}>{cat.name}</span>
+                <div key={cat.name} style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ width:8, height:8, borderRadius:4, background:cat.color }} />
+                    <span style={{ fontSize:12, color:"#94a3b8" }}>{cat.name}</span>
                   </div>
-                  <span className="text-xs font-semibold text-white shrink-0">{formatCurrency(cat.amount)}</span>
+                  <span style={{ fontSize:12, fontWeight:600, color:"#fff" }}>{formatCurrency(cat.amount)}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
-        <div className="card" style={{ padding: "24px" }}>
-          <h3 className="text-white font-semibold text-sm mb-5">Pemasukan vs Pengeluaran</h3>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={MONTHLY} barSize={14} margin={{ left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-              <XAxis dataKey="month" tick={{ fill: "#4a5878", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#4a5878", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v / 1000000}jt`} />
-              <Tooltip contentStyle={{ background: "#0e1628", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", color: "#fff", fontSize: "12px" }} formatter={(v: number) => formatCurrency(v)} />
-              <Legend wrapperStyle={{ color: "#8b9ab8", fontSize: "12px", paddingTop: "8px" }} />
-              <Bar dataKey="income"  fill="#10b981" radius={[4, 4, 0, 0]} name="Pemasukan" />
-              <Bar dataKey="expense" fill="#ef4444" radius={[4, 4, 0, 0]} name="Pengeluaran" />
-            </BarChart>
-          </ResponsiveContainer>
+
+        {/* Quick stats */}
+        <div style={{ ...card, padding:24 }}>
+          <h3 style={{ color:"#fff", fontWeight:600, fontSize:14, marginBottom:20 }}>Ringkasan</h3>
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <span style={{ fontSize:13, color:"#94a3b8" }}>Total Transaksi</span>
+              <span style={{ fontSize:16, fontWeight:700, color:"#fff" }}>{all.length}</span>
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <span style={{ fontSize:13, color:"#94a3b8" }}>Pemasukan</span>
+              <span style={{ fontSize:16, fontWeight:700, color:"#10b981" }}>{all.filter(t=>t.type==="income").length}x</span>
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <span style={{ fontSize:13, color:"#94a3b8" }}>Pengeluaran</span>
+              <span style={{ fontSize:16, fontWeight:700, color:"#ef4444" }}>{all.filter(t=>t.type==="expense").length}x</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid var(--c-border)" }}>
-          <h3 className="text-white font-semibold text-sm">Riwayat Transaksi</h3>
-          <span className="text-xs" style={{ color: "var(--c-text-3)" }}>{all.length} transaksi</span>
+      {/* Transactions Table */}
+      <div style={{ ...card, overflow:"hidden" }}>
+        <div style={{ padding:"16px 24px", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <span style={{ fontSize:14, fontWeight:600, color:"#fff" }}>Riwayat Transaksi</span>
+          <span style={{ fontSize:12, color:"#64748b" }}>{all.length} transaksi</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+        <div style={{ overflowX:"auto" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
             <thead>
-              <tr style={{ borderBottom: "1px solid var(--c-border)" }}>
-                {["Deskripsi", "Tanggal", "Kategori", "Tipe", "Jumlah", ""].map((h, i) => (
-                  <th key={i} className={cn("px-5 py-3.5 text-xs font-semibold uppercase tracking-wider", h === "Jumlah" ? "text-right" : "text-left")}
-                    style={{ color: "var(--c-text-3)" }}>{h}</th>
+              <tr style={{ borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
+                {["Deskripsi","Tanggal","Kategori","Tipe","Jumlah",""].map((h) => (
+                  <th key={h} style={{ textAlign: h==="Jumlah"?"right":"left", padding:"12px 20px", fontSize:11, fontWeight:600, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.05em" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {isLoading
-                ? Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse" style={{ borderBottom: "1px solid var(--c-border)" }}>
-                    {[200, 100, 80, 80, 100, 30].map((w, j) => (
-                      <td key={j} className="px-5 py-4"><div className="h-3 rounded" style={{ width: w, background: "rgba(255,255,255,0.06)" }} /></td>
-                    ))}
-                  </tr>
-                ))
-                : all.map((tx, i) => (
-                  <motion.tr key={tx.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="tbl-row">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                          style={{ background: tx.type === "income" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)" }}>
-                          {tx.type === "income" ? <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDownRight className="w-3.5 h-3.5 text-red-400" />}
-                        </div>
-                        <span className="font-medium text-white">{tx.description}</span>
+              {all.map((tx, i) => (
+                <tr key={tx.id} style={{ borderBottom: i < all.length-1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                  <td style={{ padding:"12px 20px" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                      <div style={{ width:28, height:28, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", background: tx.type==="income"?"rgba(16,185,129,0.1)":"rgba(239,68,68,0.1)" }}>
+                        {tx.type==="income" ? <ArrowUpRight style={{ width:14, height:14, color:"#34d399" }} /> : <ArrowDownRight style={{ width:14, height:14, color:"#f87171" }} />}
                       </div>
-                    </td>
-                    <td className="px-5 py-3.5 whitespace-nowrap" style={{ color: "var(--c-text-2)" }}>{formatDate(tx.date)}</td>
-                    <td className="px-5 py-3.5"><span className="badge badge-slate">{tx.category}</span></td>
-                    <td className="px-5 py-3.5">
-                      <span className={cn("badge", tx.type === "income" ? "badge-green" : "badge-red")}>
-                        {tx.type === "income" ? "Pemasukan" : "Pengeluaran"}
-                      </span>
-                    </td>
-                    <td className={cn("px-5 py-3.5 text-right font-bold", tx.type === "income" ? "text-emerald-400" : "text-red-400")}>
-                      {tx.type === "income" ? "+" : "−"}{formatCurrency(tx.amount)}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <button onClick={() => setDel(tx.id)} className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/10 hover:text-red-400"
-                        style={{ color: "var(--c-text-3)" }}>
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </motion.tr>
-                ))
-              }
+                      <span style={{ color:"#fff", fontWeight:500 }}>{tx.description}</span>
+                    </div>
+                  </td>
+                  <td style={{ padding:"12px 20px", color:"#94a3b8" }}>{formatDate(tx.date)}</td>
+                  <td style={{ padding:"12px 20px" }}><span style={{ padding:"3px 8px", borderRadius:6, fontSize:11, background:"rgba(100,116,139,0.1)", color:"#94a3b8" }}>{tx.category}</span></td>
+                  <td style={{ padding:"12px 20px" }}><span style={{ padding:"3px 8px", borderRadius:6, fontSize:11, background: tx.type==="income"?"rgba(16,185,129,0.1)":"rgba(239,68,68,0.1)", color: tx.type==="income"?"#34d399":"#f87171" }}>{tx.type==="income"?"Pemasukan":"Pengeluaran"}</span></td>
+                  <td style={{ padding:"12px 20px", textAlign:"right", fontWeight:600, color: tx.type==="income"?"#34d399":"#f87171" }}>{tx.type==="income"?"+":"−"}{formatCurrency(tx.amount)}</td>
+                  <td style={{ padding:"12px 20px" }}>
+                    <button onClick={() => setDeleteId(tx.id)} style={{ width:28, height:28, borderRadius:8, border:"none", background:"rgba(239,68,68,0.08)", color:"#f87171", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      <Trash2 style={{ width:12, height:12 }} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Modals */}
-      <TxForm open={showForm} onClose={() => setShow(false)} onSave={async (d) => { await createTx.mutateAsync(d); setShow(false); }} saving={createTx.isPending} />
-      <Modal open={!!deleteId} onClose={() => setDel(null)} title="Hapus Transaksi?" size="sm">
-        <p className="text-sm leading-relaxed mb-6" style={{ color: "var(--c-text-2)" }}>Data transaksi akan dihapus permanen.</p>
-        <div className="flex gap-3">
-          <button onClick={async () => { if (deleteId) { await deleteTx.mutateAsync(deleteId); setDel(null); } }} disabled={deleteTx.isPending} className="btn btn-danger flex-1 disabled:opacity-60">
-            {deleteTx.isPending ? "Menghapus..." : "Ya, Hapus"}
-          </button>
-          <button onClick={() => setDel(null)} className="btn btn-ghost px-5">Batal</button>
+      {/* Create Modal */}
+      <Modal open={showForm} onClose={() => setShowForm(false)} title="Tambah Transaksi" size="md">
+        <form onSubmit={async (e) => { e.preventDefault(); await createTx.mutateAsync(form); setForm(EMPTY); setShowForm(false); }} style={{ display:"flex", flexDirection:"column", gap:14 }}>
+          <div>
+            <label style={labelStyle}>Tipe</label>
+            <div style={{ display:"flex", gap:8 }}>
+              {(["income","expense"] as const).map((t) => (
+                <button key={t} type="button" onClick={() => setForm({...form,type:t})}
+                  style={{ flex:1, padding:"10px 0", borderRadius:10, border:"1px solid", cursor:"pointer", fontSize:13, fontWeight:600, background: form.type===t?(t==="income"?"rgba(16,185,129,0.1)":"rgba(239,68,68,0.1)"):"transparent", color: form.type===t?(t==="income"?"#34d399":"#f87171"):"#94a3b8", borderColor: form.type===t?(t==="income"?"rgba(16,185,129,0.2)":"rgba(239,68,68,0.2)"):"rgba(255,255,255,0.06)" }}>
+                  {t==="income"?"Pemasukan":"Pengeluaran"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div><label style={labelStyle}>Deskripsi *</label><input value={form.description} onChange={(e) => setForm({...form,description:e.target.value})} required style={inputStyle} placeholder="Keterangan" /></div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div><label style={labelStyle}>Jumlah (Rp) *</label><input type="number" value={form.amount||""} onChange={(e) => setForm({...form,amount:parseInt(e.target.value)||0})} required min={1} style={inputStyle} placeholder="0" /></div>
+            <div><label style={labelStyle}>Tanggal *</label><input type="date" value={form.date} onChange={(e) => setForm({...form,date:e.target.value})} required style={inputStyle} /></div>
+          </div>
+          <div><label style={labelStyle}>Kategori</label><select value={form.category} onChange={(e) => setForm({...form,category:e.target.value})} style={inputStyle}>{CATS.map(c=><option key={c} value={c}>{c}</option>)}</select></div>
+          <div style={{ display:"flex", gap:12, paddingTop:8 }}>
+            <button type="submit" disabled={createTx.isPending} style={{ ...btnPrimary, flex:1, justifyContent:"center", opacity:createTx.isPending?0.6:1 }}><Save style={{ width:14, height:14 }} />{createTx.isPending?"Menyimpan...":"Simpan"}</button>
+            <button type="button" onClick={() => setShowForm(false)} style={btnGhost}><X style={{ width:14, height:14 }} />Batal</button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Modal */}
+      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Transaksi?" size="sm">
+        <p style={{ color:"#94a3b8", fontSize:14, marginBottom:24 }}>Data transaksi akan dihapus permanen.</p>
+        <div style={{ display:"flex", gap:12 }}>
+          <button onClick={async () => { if(deleteId){ await deleteTx.mutateAsync(deleteId); setDeleteId(null); }}} disabled={deleteTx.isPending} style={{ ...btnDanger, flex:1, justifyContent:"center", opacity:deleteTx.isPending?0.6:1 }}>{deleteTx.isPending?"Menghapus...":"Ya, Hapus"}</button>
+          <button onClick={() => setDeleteId(null)} style={btnGhost}>Batal</button>
         </div>
       </Modal>
     </div>

@@ -1,271 +1,134 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Rocket, Plus, CheckCircle2, Clock, AlertCircle, Edit2, Trash2, X, Save } from "lucide-react";
+import { Rocket, CheckCircle2, Clock, AlertCircle, Plus, Edit2, Trash2, X, Save } from "lucide-react";
 import { useProker, useCreateProker, useUpdateProker, useDeleteProker } from "@/hooks/useProker";
 import { prokerList as seedProker } from "@/data/proker";
 import { Modal } from "@/components/ui/Modal";
-import { ExportButton } from "@/components/ui/ExportButton";
-import { exportProkerPDF, exportProkerExcel } from "@/lib/export";
-import { cn } from "@/lib/utils";
 import type { ProkerRow } from "@/types/database";
 import type { ProkerPayload } from "@/hooks/useProker";
 
-const CAT_OPTS = [
-  { v: "pendidikan", l: "Pendidikan" }, { v: "sosial", l: "Sosial" },
-  { v: "teknologi", l: "Teknologi" },   { v: "lingkungan", l: "Lingkungan" },
-  { v: "umkm", l: "UMKM" },            { v: "kesehatan", l: "Kesehatan" },
-  { v: "keagamaan", l: "Keagamaan" },  { v: "administrasi", l: "Administrasi" },
-];
+const card: React.CSSProperties = { background:"#111b2e", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16 };
+const inputStyle: React.CSSProperties = { width:"100%", padding:"10px 14px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:10, color:"#fff", fontSize:13, outline:"none" };
+const labelStyle: React.CSSProperties = { display:"block", fontSize:11, fontWeight:600, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6 };
+const btnPrimary: React.CSSProperties = { padding:"10px 18px", background:"linear-gradient(to right, #10b981, #06b6d4)", color:"#fff", fontWeight:600, fontSize:13, borderRadius:10, border:"none", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
+const btnGhost: React.CSSProperties = { padding:"10px 18px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.06)", color:"#94a3b8", fontWeight:600, fontSize:13, borderRadius:10, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
+const btnDanger: React.CSSProperties = { padding:"10px 18px", background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.2)", color:"#f87171", fontWeight:600, fontSize:13, borderRadius:10, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
 
-const CAT_BADGE: Record<string, string> = {
-  pendidikan: "badge-blue", sosial: "badge-pink", teknologi: "badge-cyan",
-  lingkungan: "badge-green", umkm: "badge-amber", kesehatan: "badge-red",
-  keagamaan: "badge-violet", administrasi: "badge-slate",
-};
-
-const STATUS_CFG = {
-  planning:  { label: "Planning",  icon: AlertCircle,  badge: "badge-amber", accent: "#f59e0b" },
-  ongoing:   { label: "Ongoing",   icon: Clock,        badge: "badge-cyan",  accent: "#06b6d4" },
-  completed: { label: "Completed", icon: CheckCircle2, badge: "badge-green", accent: "#10b981" },
-};
-
-const EMPTY: ProkerPayload = {
-  name: "", description: "", category: "pendidikan", ketua_pelaksana: "",
-  anggota: [], start_date: "", end_date: "", target: "", progress: 0, status: "planning",
-};
-
-function ProkerForm({ open, onClose, initial, onSave, saving }: {
-  open: boolean; onClose: () => void;
-  initial: ProkerPayload; onSave: (d: ProkerPayload) => void; saving: boolean;
-}) {
-  const [form, setForm] = useState<ProkerPayload>(initial);
-  const set = (k: keyof ProkerPayload, v: string | number | string[]) => setForm((p) => ({ ...p, [k]: v }));
-
-  return (
-    <Modal open={open} onClose={onClose} title={initial.name ? "Edit Program Kerja" : "Tambah Program Kerja"} size="lg">
-      <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className="space-y-4">
-        <div><label className="label">Nama Program Kerja *</label>
-          <input value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Bimbingan Belajar Anak SD" className="input" /></div>
-        <div><label className="label">Deskripsi *</label>
-          <textarea value={form.description} onChange={(e) => set("description", e.target.value)} required rows={3} placeholder="Deskripsi program kerja..." className="input" style={{ resize: "none" }} /></div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="label">Kategori *</label>
-            <select value={form.category} onChange={(e) => set("category", e.target.value)} className="input">
-              {CAT_OPTS.map((c) => <option key={c.v} value={c.v}>{c.l}</option>)}
-            </select></div>
-          <div><label className="label">Status *</label>
-            <select value={form.status} onChange={(e) => set("status", e.target.value as ProkerPayload["status"])} className="input">
-              <option value="planning">Planning</option>
-              <option value="ongoing">Ongoing</option>
-              <option value="completed">Completed</option>
-            </select></div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="label">Ketua Pelaksana *</label>
-            <input value={form.ketua_pelaksana} onChange={(e) => set("ketua_pelaksana", e.target.value)} required placeholder="Nama ketua" className="input" /></div>
-          <div><label className="label">Target</label>
-            <input value={form.target} onChange={(e) => set("target", e.target.value)} placeholder="30 siswa SD" className="input" /></div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="label">Tanggal Mulai *</label>
-            <input type="date" value={form.start_date} onChange={(e) => set("start_date", e.target.value)} required className="input" /></div>
-          <div><label className="label">Tanggal Selesai *</label>
-            <input type="date" value={form.end_date} onChange={(e) => set("end_date", e.target.value)} required className="input" /></div>
-        </div>
-        <div>
-          <label className="label">Progress: <span className="text-emerald-400 font-bold">{form.progress}%</span></label>
-          <input type="range" min={0} max={100} value={form.progress} onChange={(e) => set("progress", parseInt(e.target.value))} className="w-full" />
-        </div>
-        <div className="flex gap-3 pt-2">
-          <button type="submit" disabled={saving} className="btn btn-primary flex-1 disabled:opacity-60">
-            {saving ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />Menyimpan...</> : <><Save className="w-4 h-4" />Simpan</>}
-          </button>
-          <button type="button" onClick={onClose} className="btn btn-ghost px-5"><X className="w-4 h-4" />Batal</button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-type View = "kanban" | "table";
+const CAT_LABELS: Record<string,string> = { pendidikan:"Pendidikan", sosial:"Sosial", teknologi:"Teknologi", lingkungan:"Lingkungan", umkm:"UMKM", kesehatan:"Kesehatan", keagamaan:"Keagamaan", administrasi:"Administrasi" };
+const STATUS_CFG = { planning:{label:"Planning",icon:AlertCircle,color:"#f59e0b"}, ongoing:{label:"Ongoing",icon:Clock,color:"#06b6d4"}, completed:{label:"Completed",icon:CheckCircle2,color:"#10b981"} };
+const EMPTY: ProkerPayload = { name:"", description:"", category:"pendidikan", ketua_pelaksana:"", anggota:[], start_date:"", end_date:"", target:"", progress:0, status:"planning" };
 
 export default function ProkerPage() {
-  const { data: dbProker, isLoading } = useProker();
+  const { data: dbProker } = useProker();
   const createP = useCreateProker();
   const updateP = useUpdateProker();
   const deleteP = useDeleteProker();
 
-  const [view, setView]       = useState<View>("kanban");
-  const [showForm, setShow]   = useState(false);
-  const [editTarget, setEdit] = useState<ProkerRow | null>(null);
-  const [deleteId, setDel]    = useState<string | null>(null);
+  const [filter, setFilter] = useState("all");
+  const [showForm, setShowForm] = useState(false);
+  const [editTarget, setEditTarget] = useState<ProkerRow | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [form, setForm] = useState<ProkerPayload>(EMPTY);
 
   const all = (dbProker ?? seedProker) as unknown as ProkerRow[];
-  const counts = { planning: all.filter((p) => p.status === "planning").length, ongoing: all.filter((p) => p.status === "ongoing").length, completed: all.filter((p) => p.status === "completed").length };
+  const filtered = filter === "all" ? all : all.filter((p) => p.status === filter);
+  const avg = all.length ? Math.round(all.reduce((a, p) => a + p.progress, 0) / all.length) : 0;
+
+  const openCreate = () => { setForm(EMPTY); setShowForm(true); };
+  const openEdit = (p: ProkerRow) => { setForm({ name:p.name, description:p.description, category:p.category, ketua_pelaksana:p.ketua_pelaksana, anggota:p.anggota, start_date:p.start_date, end_date:p.end_date, target:p.target, progress:p.progress, status:p.status }); setEditTarget(p); };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editTarget) { await updateP.mutateAsync({ id:editTarget.id, ...form }); setEditTarget(null); }
+    else { await createP.mutateAsync(form); setShowForm(false); }
+  };
 
   return (
-    <div className="space-y-6">
+    <div style={{ maxWidth:1100, display:"flex", flexDirection:"column", gap:24 }}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div style={{ ...card, padding:24, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16 }}>
         <div>
-          <h1 className="text-xl font-bold text-white">Program Kerja</h1>
-          <p className="text-sm mt-0.5" style={{ color: "var(--c-text-2)" }}>{all.length} program kerja KKN 146</p>
+          <h1 style={{ fontSize:20, fontWeight:700, color:"#fff" }}>Program Kerja</h1>
+          <p style={{ fontSize:14, color:"#94a3b8", marginTop:4 }}>{all.length} program kerja · Progress {avg}%</p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="flex rounded-xl p-1" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--c-border)" }}>
-            {(["kanban", "table"] as View[]).map((v) => (
-              <button key={v} onClick={() => setView(v)}
-                className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
-                  view === v ? "text-emerald-400 bg-emerald-500/15" : "hover:text-white")}
-                style={{ color: view === v ? undefined : "var(--c-text-2)" }}>{v}</button>
-            ))}
-          </div>
-          <ExportButton options={[
-            { label: "Export PDF",   format: "pdf",   onClick: () => exportProkerPDF(all) },
-            { label: "Export Excel", format: "excel", onClick: () => exportProkerExcel(all) },
-          ]} />
-          <button onClick={() => setShow(true)} className="btn btn-primary"><Plus className="w-4 h-4" />Tambah</button>
-        </div>
+        <button onClick={openCreate} style={btnPrimary}><Plus style={{ width:16, height:16 }} /> Tambah Proker</button>
       </div>
 
-      {/* Status summary */}
-      <div className="grid grid-cols-3 gap-3">
-        {(["planning", "ongoing", "completed"] as const).map((s) => {
-          const cfg = STATUS_CFG[s];
+      {/* Status Summary */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:12 }} className="max-sm:!grid-cols-1">
+        {(["planning","ongoing","completed"] as const).map((s) => {
+          const cfg = STATUS_CFG[s]; const count = all.filter((p) => p.status === s).length;
           return (
-            <div key={s} className="card flex items-center gap-3" style={{ padding: "16px", background: `${cfg.accent}0d`, border: `1px solid ${cfg.accent}25` }}>
-              <cfg.icon className="w-5 h-5 shrink-0" style={{ color: cfg.accent }} />
-              <div>
-                <p className="font-bold text-xl text-white leading-none">{counts[s]}</p>
-                <p className="text-xs mt-0.5" style={{ color: cfg.accent }}>{cfg.label}</p>
+            <div key={s} onClick={() => setFilter(filter===s?"all":s)} style={{ ...card, padding:20, display:"flex", alignItems:"center", gap:12, cursor:"pointer", borderColor: filter===s?`${cfg.color}40`:`${cfg.color}30`, background:`${cfg.color}08` }}>
+              <cfg.icon style={{ width:20, height:20, color:cfg.color }} />
+              <div><p style={{ color:"#fff", fontWeight:700, fontSize:20 }}>{count}</p><p style={{ color:cfg.color, fontSize:12, fontWeight:600 }}>{cfg.label}</p></div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Cards */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:16 }} className="max-md:!grid-cols-2 max-sm:!grid-cols-1">
+        {filtered.map((p) => {
+          const cfg = STATUS_CFG[p.status];
+          return (
+            <div key={p.id} style={{ ...card, padding:20, display:"flex", flexDirection:"column", gap:10 }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <span style={{ padding:"3px 10px", borderRadius:8, fontSize:10, fontWeight:600, background:"rgba(6,182,212,0.1)", color:"#22d3ee" }}>{CAT_LABELS[p.category]??p.category}</span>
+                <span style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, fontWeight:600, color:cfg.color }}><cfg.icon style={{ width:12, height:12 }} />{cfg.label}</span>
+              </div>
+              <h3 style={{ color:"#fff", fontWeight:700, fontSize:14 }}>{p.name}</h3>
+              <p style={{ color:"#94a3b8", fontSize:12, lineHeight:1.6, flex:1 }}>{p.description}</p>
+              <div style={{ borderTop:"1px solid rgba(255,255,255,0.04)", paddingTop:10 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, marginBottom:6 }}>
+                  <span style={{ color:"#64748b" }}>{p.ketua_pelaksana}</span>
+                  <span style={{ color:"#fff", fontWeight:700 }}>{p.progress}%</span>
+                </div>
+                <div style={{ height:5, background:"rgba(255,255,255,0.06)", borderRadius:99, overflow:"hidden" }}>
+                  <div style={{ height:"100%", width:`${p.progress}%`, background:cfg.color, borderRadius:99 }} />
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:8, paddingTop:8 }}>
+                <button onClick={() => openEdit(p)} style={{ flex:1, padding:"7px 0", borderRadius:8, border:"none", background:"rgba(255,255,255,0.04)", color:"#94a3b8", fontSize:11, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}><Edit2 style={{ width:11, height:11 }} />Edit</button>
+                <button onClick={() => setDeleteId(p.id)} style={{ padding:"7px 12px", borderRadius:8, border:"none", background:"rgba(239,68,68,0.08)", color:"#f87171", cursor:"pointer" }}><Trash2 style={{ width:12, height:12 }} /></button>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Kanban */}
-      {view === "kanban" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {(["planning", "ongoing", "completed"] as const).map((status) => {
-            const cfg = STATUS_CFG[status];
-            const items = all.filter((p) => p.status === status);
-            return (
-              <div key={status} className="flex flex-col gap-3">
-                <div className={cn("badge flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold", cfg.badge)}
-                  style={{ borderRadius: "12px" }}>
-                  <cfg.icon className="w-4 h-4" />{cfg.label}
-                  <span className="ml-auto text-xs opacity-60 font-normal">{items.length}</span>
-                </div>
-                {isLoading
-                  ? Array.from({ length: 2 }).map((_, i) => (
-                    <div key={i} className="card animate-pulse space-y-2.5" style={{ padding: "16px" }}>
-                      <div className="h-3.5 rounded" style={{ background: "rgba(255,255,255,0.06)", width: "75%" }} />
-                      <div className="h-3 rounded" style={{ background: "rgba(255,255,255,0.04)" }} />
-                      <div className="h-2 rounded mt-3" style={{ background: "rgba(255,255,255,0.06)" }} />
-                    </div>
-                  ))
-                  : items.map((p, i) => (
-                    <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                      className="card card-hover group" style={{ padding: "16px" }}>
-                      <span className={cn("badge mb-2.5", CAT_BADGE[p.category] ?? "badge-slate")}>
-                        {CAT_OPTS.find((c) => c.v === p.category)?.l ?? p.category}
-                      </span>
-                      <p className="text-white font-semibold text-sm leading-snug mb-1.5">{p.name}</p>
-                      <p className="text-xs leading-relaxed mb-3 line-clamp-2" style={{ color: "var(--c-text-2)" }}>{p.description}</p>
-                      <div className="flex items-center justify-between text-xs mb-2.5">
-                        <span style={{ color: "var(--c-text-3)" }}>{p.ketua_pelaksana}</span>
-                        <span className="font-bold text-emerald-400">{p.progress}%</span>
-                      </div>
-                      <div className="progress-track mb-3">
-                        <div className="progress-fill" style={{ width: `${p.progress}%` }} />
-                      </div>
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => setEdit(p)} className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs transition-all"
-                          style={{ background: "rgba(255,255,255,0.06)", color: "var(--c-text-2)" }}>
-                          <Edit2 className="w-3 h-3" />Edit
-                        </button>
-                        <button onClick={() => setDel(p.id)} className="px-3 py-1.5 rounded-lg text-xs transition-all"
-                          style={{ background: "rgba(239,68,68,0.1)", color: "#f87171" }}>
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  ))
-                }
-                {!isLoading && items.length === 0 && (
-                  <div className="p-6 rounded-xl text-center text-xs" style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed var(--c-border)", color: "var(--c-text-3)" }}>
-                    Tidak ada proker
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Table */}
-      {view === "table" && (
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--c-border)" }}>
-                  {["Program Kerja", "Kategori", "Ketua", "Status", "Progress", "Aksi"].map((h) => (
-                    <th key={h} className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--c-text-3)" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {all.map((p, i) => {
-                  const cfg = STATUS_CFG[p.status];
-                  return (
-                    <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }} className="tbl-row">
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-white">{p.name}</p>
-                        <p className="text-xs mt-0.5 line-clamp-1 max-w-[200px]" style={{ color: "var(--c-text-3)" }}>{p.description}</p>
-                      </td>
-                      <td className="px-5 py-4"><span className={cn("badge", CAT_BADGE[p.category] ?? "badge-slate")}>{CAT_OPTS.find((c) => c.v === p.category)?.l}</span></td>
-                      <td className="px-5 py-4 whitespace-nowrap" style={{ color: "var(--c-text-2)" }}>{p.ketua_pelaksana}</td>
-                      <td className="px-5 py-4"><span className={cn("badge flex items-center gap-1 w-fit", cfg.badge)}><cfg.icon className="w-3 h-3" />{cfg.label}</span></td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-20 progress-track"><div className="progress-fill" style={{ width: `${p.progress}%` }} /></div>
-                          <span className="text-xs font-bold text-emerald-400">{p.progress}%</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex gap-2">
-                          <button onClick={() => setEdit(p)} className="btn btn-ghost text-xs py-1.5 px-3">Edit</button>
-                          <button onClick={() => setDel(p.id)} className="btn btn-danger text-xs py-1.5 px-3">Hapus</button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      {/* Create/Edit Modal */}
+      <Modal open={showForm || !!editTarget} onClose={() => { setShowForm(false); setEditTarget(null); }} title={editTarget?"Edit Program Kerja":"Tambah Program Kerja"} size="lg">
+        <form onSubmit={handleSave} style={{ display:"flex", flexDirection:"column", gap:14 }}>
+          <div><label style={labelStyle}>Nama Proker *</label><input value={form.name} onChange={(e) => setForm({...form,name:e.target.value})} required style={inputStyle} placeholder="Bimbingan Belajar Anak SD" /></div>
+          <div><label style={labelStyle}>Deskripsi *</label><textarea value={form.description} onChange={(e) => setForm({...form,description:e.target.value})} required rows={3} style={{ ...inputStyle, resize:"none" }} placeholder="Deskripsi program kerja..." /></div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div><label style={labelStyle}>Kategori</label><select value={form.category} onChange={(e) => setForm({...form,category:e.target.value})} style={inputStyle}>{Object.entries(CAT_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select></div>
+            <div><label style={labelStyle}>Status</label><select value={form.status} onChange={(e) => setForm({...form,status:e.target.value as any})} style={inputStyle}><option value="planning">Planning</option><option value="ongoing">Ongoing</option><option value="completed">Completed</option></select></div>
           </div>
-        </div>
-      )}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div><label style={labelStyle}>Ketua Pelaksana *</label><input value={form.ketua_pelaksana} onChange={(e) => setForm({...form,ketua_pelaksana:e.target.value})} required style={inputStyle} placeholder="Nama" /></div>
+            <div><label style={labelStyle}>Target</label><input value={form.target} onChange={(e) => setForm({...form,target:e.target.value})} style={inputStyle} placeholder="30 siswa SD" /></div>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div><label style={labelStyle}>Tanggal Mulai *</label><input type="date" value={form.start_date} onChange={(e) => setForm({...form,start_date:e.target.value})} required style={inputStyle} /></div>
+            <div><label style={labelStyle}>Tanggal Selesai *</label><input type="date" value={form.end_date} onChange={(e) => setForm({...form,end_date:e.target.value})} required style={inputStyle} /></div>
+          </div>
+          <div><label style={labelStyle}>Progress: {form.progress}%</label><input type="range" min={0} max={100} value={form.progress} onChange={(e) => setForm({...form,progress:parseInt(e.target.value)})} style={{ width:"100%" }} /></div>
+          <div style={{ display:"flex", gap:12, paddingTop:8 }}>
+            <button type="submit" disabled={createP.isPending||updateP.isPending} style={{ ...btnPrimary, flex:1, justifyContent:"center", opacity:(createP.isPending||updateP.isPending)?0.6:1 }}><Save style={{ width:14, height:14 }} />{(createP.isPending||updateP.isPending)?"Menyimpan...":"Simpan"}</button>
+            <button type="button" onClick={() => { setShowForm(false); setEditTarget(null); }} style={btnGhost}><X style={{ width:14, height:14 }} />Batal</button>
+          </div>
+        </form>
+      </Modal>
 
-      {/* Modals */}
-      <ProkerForm open={showForm} onClose={() => setShow(false)} initial={EMPTY}
-        onSave={async (d) => { await createP.mutateAsync(d); setShow(false); }} saving={createP.isPending} />
-      {editTarget && (
-        <ProkerForm open onClose={() => setEdit(null)}
-          initial={{ name: editTarget.name, description: editTarget.description, category: editTarget.category, ketua_pelaksana: editTarget.ketua_pelaksana, anggota: editTarget.anggota, start_date: editTarget.start_date, end_date: editTarget.end_date, target: editTarget.target, progress: editTarget.progress, status: editTarget.status }}
-          onSave={async (d) => { await updateP.mutateAsync({ id: editTarget.id, ...d }); setEdit(null); }} saving={updateP.isPending} />
-      )}
-      <Modal open={!!deleteId} onClose={() => setDel(null)} title="Hapus Program Kerja?" size="sm">
-        <p className="text-sm leading-relaxed mb-6" style={{ color: "var(--c-text-2)" }}>Data program kerja akan dihapus permanen.</p>
-        <div className="flex gap-3">
-          <button onClick={async () => { if (deleteId) { await deleteP.mutateAsync(deleteId); setDel(null); } }} disabled={deleteP.isPending} className="btn btn-danger flex-1 disabled:opacity-60">
-            {deleteP.isPending ? "Menghapus..." : "Ya, Hapus"}
-          </button>
-          <button onClick={() => setDel(null)} className="btn btn-ghost px-5">Batal</button>
+      {/* Delete Modal */}
+      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Program Kerja?" size="sm">
+        <p style={{ color:"#94a3b8", fontSize:14, marginBottom:24 }}>Data program kerja akan dihapus permanen.</p>
+        <div style={{ display:"flex", gap:12 }}>
+          <button onClick={async () => { if(deleteId){ await deleteP.mutateAsync(deleteId); setDeleteId(null); }}} disabled={deleteP.isPending} style={{ ...btnDanger, flex:1, justifyContent:"center", opacity:deleteP.isPending?0.6:1 }}>{deleteP.isPending?"Menghapus...":"Ya, Hapus"}</button>
+          <button onClick={() => setDeleteId(null)} style={btnGhost}>Batal</button>
         </div>
       </Modal>
     </div>

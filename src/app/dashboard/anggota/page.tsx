@@ -1,282 +1,206 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Users, Plus, Search, GraduationCap, Edit2, Trash2, X, Save } from "lucide-react";
+import { useState, useRef } from "react";
+import { Users, Search, GraduationCap, Plus, Edit2, Trash2, X, Save, Camera, Upload } from "lucide-react";
 import { useMembers, useCreateMember, useUpdateMember, useDeleteMember } from "@/hooks/useMembers";
 import { members as seedMembers } from "@/data/members";
 import { Modal } from "@/components/ui/Modal";
-import { ExportButton } from "@/components/ui/ExportButton";
-import { exportAnggotaPDF, exportAnggotaExcel } from "@/lib/export";
-import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import Image from "next/image";
 import type { MemberRow } from "@/types/database";
 import type { MemberPayload } from "@/hooks/useMembers";
 
-/* ─── helpers ─────────────────────────────────────────────── */
-const getColor = (m: MemberRow) => (m as unknown as { color?: string }).color ?? "from-emerald-500 to-cyan-500";
-const getInit  = (m: MemberRow) => (m as unknown as { initials?: string }).initials ?? m.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+const card: React.CSSProperties = { background:"#111b2e", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16 };
+const inputStyle: React.CSSProperties = { width:"100%", padding:"10px 14px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:10, color:"#fff", fontSize:13, outline:"none" };
+const labelStyle: React.CSSProperties = { display:"block", fontSize:11, fontWeight:600, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6 };
+const btnPrimary: React.CSSProperties = { padding:"10px 18px", background:"linear-gradient(to right, #10b981, #06b6d4)", color:"#fff", fontWeight:600, fontSize:13, borderRadius:10, border:"none", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
+const btnGhost: React.CSSProperties = { padding:"10px 18px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.06)", color:"#94a3b8", fontWeight:600, fontSize:13, borderRadius:10, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
+const btnDanger: React.CSSProperties = { padding:"10px 18px", background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.2)", color:"#f87171", fontWeight:600, fontSize:13, borderRadius:10, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
 
-/* ─── Avatar ──────────────────────────────────────────────── */
-function Av({ m, size = "md" }: { m: MemberRow; size?: "sm" | "md" | "lg" }) {
-  const s = { sm: "w-8 h-8 text-[11px] rounded-lg", md: "w-10 h-10 text-xs rounded-xl", lg: "w-12 h-12 text-sm rounded-2xl" }[size];
+const EMPTY: MemberPayload = { name:"", nim:"", division:"PDD", role:"", faculty:"", prodi:"", gender:"Laki-Laki", quote:"", instagram:"", whatsapp:null, photo_url:null, color:"from-emerald-500 to-teal-600", initials:"" };
+const DIVS = ["Ketua","Sekretaris","Bendahara","Humas","Humas & Acara","Acara","PDD"];
+
+async function uploadPhoto(file: File): Promise<string | null> {
+  const ext = file.name.split(".").pop();
+  const fileName = `members/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage.from("photos").upload(fileName, file, { cacheControl: "3600", upsert: false });
+  if (error) { console.error("Upload error:", error); return null; }
+  const { data } = supabase.storage.from("photos").getPublicUrl(fileName);
+  return data.publicUrl;
+}
+
+function Avatar({ m, size = 48 }: { m: MemberRow; size?: number }) {
+  const photoUrl = m.photo_url;
+  const initials = (m as any).initials ?? m.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
+  const color = (m as any).color ?? "from-emerald-500 to-cyan-500";
+
+  if (photoUrl) {
+    return (
+      <div style={{ width:size, height:size, borderRadius:size > 40 ? 16 : 12, overflow:"hidden", flexShrink:0 }}>
+        <Image src={photoUrl} alt={m.name} width={size} height={size} style={{ objectFit:"cover", width:"100%", height:"100%" }} />
+      </div>
+    );
+  }
   return (
-    <div className={cn("bg-gradient-to-br flex items-center justify-center text-white font-bold shrink-0", getColor(m), s)}>
-      {getInit(m)}
+    <div className={`bg-gradient-to-br ${color}`} style={{ width:size, height:size, borderRadius:size > 40 ? 16 : 12, display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:800, fontSize:size > 40 ? 18 : 14, flexShrink:0 }}>
+      {initials}
     </div>
   );
 }
 
-/* ─── Division badge ──────────────────────────────────────── */
-const DIV_CLS: Record<string, string> = {
-  Ketua: "badge-green", Sekretaris: "badge-cyan", Bendahara: "badge-rose",
-  Humas: "badge-amber", "Humas & Acara": "badge-orange", Acara: "badge-fuchsia", PDD: "badge-indigo",
-};
-const DivBadge = ({ d }: { d: string }) => (
-  <span className={cn("badge", DIV_CLS[d] ?? "badge-slate")}>{d}</span>
-);
-
-/* ─── Form ────────────────────────────────────────────────── */
-const DIVS = ["Ketua", "Sekretaris", "Bendahara", "Humas", "Humas & Acara", "Acara", "PDD"];
-const COLORS = [
-  { v: "from-emerald-500 to-teal-600" }, { v: "from-cyan-500 to-sky-600" },
-  { v: "from-indigo-500 to-blue-600" }, { v: "from-violet-500 to-purple-600" },
-  { v: "from-pink-500 to-rose-600" },   { v: "from-amber-500 to-orange-600" },
-  { v: "from-fuchsia-500 to-pink-600" },{ v: "from-rose-500 to-red-600" },
-];
-const EMPTY: MemberPayload = {
-  name: "", nim: "", division: "PDD", role: "", faculty: "", prodi: "",
-  gender: "Laki-Laki", quote: "", instagram: "", whatsapp: null,
-  photo_url: null, color: "from-emerald-500 to-teal-600", initials: "",
-};
-
-function MemberForm({ open, onClose, initial, onSave, saving }: {
-  open: boolean; onClose: () => void;
-  initial: MemberPayload; onSave: (d: MemberPayload) => void; saving: boolean;
-}) {
-  const [form, setForm] = useState<MemberPayload>(initial);
-  const set = (k: keyof MemberPayload, v: string | null) =>
-    setForm((p) => {
-      const n = { ...p, [k]: v };
-      if (k === "name" && typeof v === "string")
-        n.initials = v.split(" ").map((w) => w[0] ?? "").join("").toUpperCase().slice(0, 2);
-      return n;
-    });
-
-  return (
-    <Modal open={open} onClose={onClose} title={initial.nim ? "Edit Anggota" : "Tambah Anggota"} size="lg">
-      <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="label">Nama Lengkap *</label><input value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Nama lengkap" className="input" /></div>
-          <div><label className="label">NIM *</label><input value={form.nim} onChange={(e) => set("nim", e.target.value)} required placeholder="G1A023039" className="input font-mono" /></div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="label">Divisi *</label>
-            <select value={form.division} onChange={(e) => set("division", e.target.value)} className="input">
-              {DIVS.map((d) => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
-          <div><label className="label">Jabatan *</label><input value={form.role} onChange={(e) => set("role", e.target.value)} required placeholder="Koordinator PDD" className="input" /></div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="label">Fakultas *</label><input value={form.faculty} onChange={(e) => set("faculty", e.target.value)} required placeholder="Fakultas Teknik" className="input" /></div>
-          <div><label className="label">Program Studi *</label><input value={form.prodi} onChange={(e) => set("prodi", e.target.value)} required placeholder="Informatika" className="input" /></div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="label">Jenis Kelamin</label>
-            <select value={form.gender ?? "Laki-Laki"} onChange={(e) => set("gender", e.target.value)} className="input">
-              <option value="Laki-Laki">Laki-Laki</option>
-              <option value="Perempuan">Perempuan</option>
-            </select>
-          </div>
-          <div><label className="label">Instagram</label><input value={form.instagram ?? ""} onChange={(e) => set("instagram", e.target.value)} placeholder="username" className="input" /></div>
-        </div>
-        <div><label className="label">Quote</label><input value={form.quote ?? ""} onChange={(e) => set("quote", e.target.value)} placeholder="Kata-kata motivasi..." className="input" /></div>
-        <div>
-          <label className="label">Warna Avatar</label>
-          <div className="flex flex-wrap gap-2">
-            {COLORS.map((c) => (
-              <button key={c.v} type="button" onClick={() => set("color", c.v)}
-                className={cn("w-8 h-8 rounded-xl bg-gradient-to-br transition-all", c.v,
-                  form.color === c.v ? "ring-2 ring-white ring-offset-2 ring-offset-[#0e1628] scale-110" : "opacity-50 hover:opacity-90"
-                )} />
-            ))}
-          </div>
-        </div>
-        <div className="flex gap-3 pt-2">
-          <button type="submit" disabled={saving} className="btn btn-primary flex-1 disabled:opacity-60">
-            {saving ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />Menyimpan...</> : <><Save className="w-4 h-4" />Simpan</>}
-          </button>
-          <button type="button" onClick={onClose} className="btn btn-ghost px-5"><X className="w-4 h-4" />Batal</button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-/* ─── Page ────────────────────────────────────────────────── */
 export default function AnggotaPage() {
-  const { data: dbMembers, isLoading } = useMembers();
+  const { data: dbMembers } = useMembers();
   const createM = useCreateMember();
   const updateM = useUpdateMember();
   const deleteM = useDeleteMember();
 
-  const [search, setSearch]     = useState("");
+  const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [editTarget, setEdit]   = useState<MemberRow | null>(null);
+  const [editTarget, setEditTarget] = useState<MemberRow | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [form, setForm] = useState<MemberPayload>(EMPTY);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const all = (dbMembers ?? seedMembers) as unknown as MemberRow[];
-  const filtered = all.filter((m) =>
-    m.name.toLowerCase().includes(search.toLowerCase()) ||
-    m.nim.toLowerCase().includes(search.toLowerCase()) ||
-    m.division.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = all.filter((m) => m.name.toLowerCase().includes(search.toLowerCase()) || m.nim.toLowerCase().includes(search.toLowerCase()));
+
+  const openCreate = () => { setForm(EMPTY); setPhotoFile(null); setPhotoPreview(null); setShowForm(true); };
+  const openEdit = (m: MemberRow) => {
+    setForm({ name:m.name, nim:m.nim, division:m.division, role:m.role, faculty:m.faculty, prodi:m.prodi, gender:m.gender, quote:m.quote??"", instagram:m.instagram??"", whatsapp:m.whatsapp??null, photo_url:m.photo_url??null, color:(m as any).color??"from-emerald-500 to-teal-600", initials:(m as any).initials??"" });
+    setPhotoFile(null);
+    setPhotoPreview(m.photo_url ?? null);
+    setEditTarget(m);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUploading(true);
+
+    let photoUrl = form.photo_url;
+    if (photoFile) {
+      const url = await uploadPhoto(photoFile);
+      if (url) photoUrl = url;
+    }
+
+    const payload = { ...form, photo_url: photoUrl, initials: form.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase() };
+    if (editTarget) { await updateM.mutateAsync({ id: editTarget.id, ...payload }); setEditTarget(null); }
+    else { await createM.mutateAsync(payload); setShowForm(false); }
+    setUploading(false);
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
 
   return (
-    <div className="space-y-6">
+    <div style={{ maxWidth:1100, display:"flex", flexDirection:"column", gap:24 }}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div style={{ ...card, padding:24, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16 }}>
         <div>
-          <h1 className="text-xl font-bold text-white">Anggota KKN 146</h1>
-          <p className="text-sm mt-0.5" style={{ color: "var(--c-text-2)" }}>{all.length} anggota terdaftar</p>
+          <h1 style={{ fontSize:20, fontWeight:700, color:"#fff" }}>Anggota KKN 146</h1>
+          <p style={{ fontSize:14, color:"#94a3b8", marginTop:4 }}>{all.length} anggota terdaftar</p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <ExportButton options={[
-            { label: "Export PDF",   format: "pdf",   onClick: () => exportAnggotaPDF(all) },
-            { label: "Export Excel", format: "excel", onClick: () => exportAnggotaExcel(all) },
-          ]} />
-          <button onClick={() => setShowForm(true)} className="btn btn-primary">
-            <Plus className="w-4 h-4" />Tambah
-          </button>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ position:"relative" }}>
+            <Search style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", width:14, height:14, color:"#475569", pointerEvents:"none" }} />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama, NIM..." style={{ ...inputStyle, paddingLeft:36, width:220 }} />
+          </div>
+          <button onClick={openCreate} style={btnPrimary}><Plus style={{ width:16, height:16 }} /> Tambah</button>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-xs">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: "var(--c-text-3)" }} />
-        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama, NIM, divisi..." className="input pl-9" />
-      </div>
-
-      {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {filtered.map((m, i) => (
-          <motion.div key={m.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-            className="card card-hover flex flex-col gap-4" style={{ padding: "20px" }}>
-            {/* Avatar + name */}
-            <div className="flex items-start gap-3">
-              <div className="relative shrink-0">
-                <Av m={m} size="lg" />
-                <div className={cn("absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 flex items-center justify-center text-white text-[8px] font-bold",
-                  m.gender === "Perempuan" ? "bg-pink-500" : "bg-blue-500")}
-                  style={{ borderColor: "var(--c-card)" }}>
-                  {m.gender === "Perempuan" ? "♀" : "♂"}
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-semibold text-[13px] leading-snug line-clamp-2">{m.name}</p>
-                <p className="text-[11px] font-mono mt-0.5" style={{ color: "var(--c-text-3)" }}>{m.nim}</p>
-              </div>
+      {/* Cards Grid */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:16 }} className="max-md:!grid-cols-2 max-sm:!grid-cols-1">
+        {filtered.map((m) => (
+          <div key={m.id} style={{ ...card, padding:20, display:"flex", flexDirection:"column", gap:12 }}>
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:10 }}>
+              <Avatar m={m} size={56} />
+              <p style={{ color:"#fff", fontWeight:600, fontSize:13 }}>{m.name}</p>
+              <p style={{ color:"#64748b", fontSize:11, fontFamily:"monospace" }}>{m.nim}</p>
+              <span style={{ padding:"4px 10px", borderRadius:8, fontSize:10, fontWeight:600, background:"rgba(16,185,129,0.1)", color:"#34d399" }}>{m.division}</span>
             </div>
-
-            <DivBadge d={m.division} />
-
-            <div className="flex items-start gap-2">
-              <GraduationCap className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--c-text-3)" }} />
-              <div className="min-w-0">
-                <p className="text-xs line-clamp-1" style={{ color: "var(--c-text-2)" }}>{m.faculty}</p>
-                <p className="text-xs font-medium mt-0.5 text-white">{m.prodi}</p>
-              </div>
+            <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, color:"#94a3b8" }}>
+              <GraduationCap style={{ width:12, height:12, color:"#64748b" }} />{m.prodi}
             </div>
-
-            <div className="flex gap-2 pt-3 mt-auto" style={{ borderTop: "1px solid var(--c-border)" }}>
-              <button onClick={() => setEdit(m)}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-all"
-                style={{ background: "rgba(255,255,255,0.05)", color: "var(--c-text-2)" }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.09)"; e.currentTarget.style.color = "#fff"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "var(--c-text-2)"; }}>
-                <Edit2 className="w-3 h-3" />Edit
+            <div style={{ display:"flex", gap:8, marginTop:"auto", paddingTop:12, borderTop:"1px solid rgba(255,255,255,0.04)" }}>
+              <button onClick={() => openEdit(m)} style={{ flex:1, padding:"8px 0", borderRadius:8, border:"none", background:"rgba(255,255,255,0.04)", color:"#94a3b8", fontSize:11, fontWeight:500, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
+                <Edit2 style={{ width:11, height:11 }} />Edit
               </button>
-              <button onClick={() => setDeleteId(m.id)}
-                className="flex items-center justify-center px-3 py-2 rounded-xl transition-all"
-                style={{ background: "rgba(239,68,68,0.1)", color: "#f87171" }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.18)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.1)"; }}>
-                <Trash2 className="w-3.5 h-3.5" />
+              <button onClick={() => setDeleteId(m.id)} style={{ padding:"8px 12px", borderRadius:8, border:"none", background:"rgba(239,68,68,0.08)", color:"#f87171", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <Trash2 style={{ width:12, height:12 }} />
               </button>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
-      {/* Table */}
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div className="flex items-center gap-2.5 px-6 py-4" style={{ borderBottom: "1px solid var(--c-border)" }}>
-          <Users className="w-4 h-4 text-emerald-400" />
-          <p className="text-[13px] font-semibold text-white">Tabel Anggota</p>
-          <span className="ml-auto text-xs" style={{ color: "var(--c-text-3)" }}>{filtered.length} anggota</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
-            <thead>
-              <tr style={{ borderBottom: "1px solid var(--c-border)" }}>
-                {["No", "Nama", "NIM", "Fakultas", "Prodi", "Divisi", "JK"].map((h) => (
-                  <th key={h} className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--c-text-3)" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading
-                ? Array.from({ length: 8 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse" style={{ borderBottom: "1px solid var(--c-border)" }}>
-                    {[8, 160, 80, 140, 100, 60, 20].map((w, j) => (
-                      <td key={j} className="px-5 py-4"><div className="h-3 rounded" style={{ width: w, background: "rgba(255,255,255,0.06)" }} /></td>
-                    ))}
-                  </tr>
-                ))
-                : filtered.map((m, i) => (
-                  <motion.tr key={m.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                    className="tbl-row">
-                    <td className="px-5 py-3.5" style={{ color: "var(--c-text-3)" }}>{i + 1}.</td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <Av m={m} size="sm" />
-                        <span className="font-medium text-white">{m.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 font-mono whitespace-nowrap" style={{ color: "var(--c-text-2)" }}>{m.nim}</td>
-                    <td className="px-5 py-3.5 max-w-[180px]" style={{ color: "var(--c-text-2)" }}><span className="line-clamp-1">{m.faculty}</span></td>
-                    <td className="px-5 py-3.5 whitespace-nowrap text-white">{m.prodi}</td>
-                    <td className="px-5 py-3.5"><DivBadge d={m.division} /></td>
-                    <td className="px-5 py-3.5">
-                      <span className={cn("inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold",
-                        m.gender === "Perempuan" ? "bg-pink-500/20 text-pink-400" : "bg-blue-500/20 text-blue-400")}>
-                        {m.gender === "Perempuan" ? "♀" : "♂"}
-                      </span>
-                    </td>
-                  </motion.tr>
-                ))
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Create/Edit Modal */}
+      <Modal open={showForm || !!editTarget} onClose={() => { setShowForm(false); setEditTarget(null); setPhotoFile(null); setPhotoPreview(null); }} title={editTarget ? "Edit Anggota" : "Tambah Anggota"} size="lg">
+        <form onSubmit={handleSave} style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          {/* Photo Upload */}
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
+            <div style={{ position:"relative" }}>
+              {photoPreview ? (
+                <div style={{ width:80, height:80, borderRadius:20, overflow:"hidden", border:"2px solid rgba(16,185,129,0.3)" }}>
+                  <img src={photoPreview} alt="Preview" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                </div>
+              ) : (
+                <div style={{ width:80, height:80, borderRadius:20, background:"rgba(255,255,255,0.04)", border:"2px dashed rgba(255,255,255,0.12)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <Camera style={{ width:24, height:24, color:"#64748b" }} />
+                </div>
+              )}
+              <button type="button" onClick={() => fileRef.current?.click()}
+                style={{ position:"absolute", bottom:-4, right:-4, width:28, height:28, borderRadius:99, background:"linear-gradient(135deg, #10b981, #06b6d4)", border:"3px solid #111b2e", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+                <Upload style={{ width:12, height:12, color:"#fff" }} />
+              </button>
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display:"none" }} />
+            <p style={{ fontSize:11, color:"#64748b" }}>Klik ikon untuk upload foto (opsional)</p>
+          </div>
 
-      {/* Modals */}
-      <MemberForm open={showForm} onClose={() => setShowForm(false)} initial={EMPTY}
-        onSave={async (d) => { await createM.mutateAsync(d); setShowForm(false); }} saving={createM.isPending} />
-      {editTarget && (
-        <MemberForm open onClose={() => setEdit(null)}
-          initial={{ name: editTarget.name, nim: editTarget.nim, division: editTarget.division, role: editTarget.role, faculty: editTarget.faculty, prodi: editTarget.prodi, gender: editTarget.gender, quote: editTarget.quote ?? "", instagram: editTarget.instagram ?? "", whatsapp: editTarget.whatsapp ?? null, photo_url: editTarget.photo_url ?? null, color: editTarget.color, initials: editTarget.initials }}
-          onSave={async (d) => { await updateM.mutateAsync({ id: editTarget.id, ...d }); setEdit(null); }} saving={updateM.isPending} />
-      )}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div><label style={labelStyle}>Nama Lengkap *</label><input value={form.name} onChange={(e) => setForm({...form, name:e.target.value})} required style={inputStyle} placeholder="Nama lengkap" /></div>
+            <div><label style={labelStyle}>NIM *</label><input value={form.nim} onChange={(e) => setForm({...form, nim:e.target.value})} required style={inputStyle} placeholder="G1A023039" /></div>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div><label style={labelStyle}>Divisi *</label><select value={form.division} onChange={(e) => setForm({...form, division:e.target.value})} style={inputStyle}>{DIVS.map(d=><option key={d} value={d}>{d}</option>)}</select></div>
+            <div><label style={labelStyle}>Jabatan *</label><input value={form.role} onChange={(e) => setForm({...form, role:e.target.value})} required style={inputStyle} placeholder="Koordinator PDD" /></div>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div><label style={labelStyle}>Fakultas *</label><input value={form.faculty} onChange={(e) => setForm({...form, faculty:e.target.value})} required style={inputStyle} placeholder="Fakultas Teknik" /></div>
+            <div><label style={labelStyle}>Prodi *</label><input value={form.prodi} onChange={(e) => setForm({...form, prodi:e.target.value})} required style={inputStyle} placeholder="Informatika" /></div>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div><label style={labelStyle}>Jenis Kelamin</label><select value={form.gender} onChange={(e) => setForm({...form, gender:e.target.value})} style={inputStyle}><option value="Laki-Laki">Laki-Laki</option><option value="Perempuan">Perempuan</option></select></div>
+            <div><label style={labelStyle}>Instagram</label><input value={form.instagram??""} onChange={(e) => setForm({...form, instagram:e.target.value})} style={inputStyle} placeholder="username" /></div>
+          </div>
+          <div><label style={labelStyle}>Quote</label><input value={form.quote??""} onChange={(e) => setForm({...form, quote:e.target.value})} style={inputStyle} placeholder="Kata motivasi..." /></div>
+          <div style={{ display:"flex", gap:12, paddingTop:8 }}>
+            <button type="submit" disabled={createM.isPending || updateM.isPending || uploading} style={{ ...btnPrimary, flex:1, justifyContent:"center", opacity: (createM.isPending||updateM.isPending||uploading)?0.6:1 }}>
+              <Save style={{ width:14, height:14 }} />{uploading?"Mengupload foto...":(createM.isPending||updateM.isPending)?"Menyimpan...":"Simpan"}
+            </button>
+            <button type="button" onClick={() => { setShowForm(false); setEditTarget(null); setPhotoFile(null); setPhotoPreview(null); }} style={btnGhost}><X style={{ width:14, height:14 }} />Batal</button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Modal */}
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Anggota?" size="sm">
-        <p className="text-sm leading-relaxed mb-6" style={{ color: "var(--c-text-2)" }}>Data anggota akan dihapus permanen dari database.</p>
-        <div className="flex gap-3">
-          <button onClick={async () => { if (deleteId) { await deleteM.mutateAsync(deleteId); setDeleteId(null); } }}
-            disabled={deleteM.isPending} className="btn btn-danger flex-1 disabled:opacity-60">
-            {deleteM.isPending ? "Menghapus..." : "Ya, Hapus"}
+        <p style={{ color:"#94a3b8", fontSize:14, marginBottom:24 }}>Data anggota akan dihapus permanen.</p>
+        <div style={{ display:"flex", gap:12 }}>
+          <button onClick={async () => { if(deleteId){ await deleteM.mutateAsync(deleteId); setDeleteId(null); }}} disabled={deleteM.isPending} style={{ ...btnDanger, flex:1, justifyContent:"center", opacity:deleteM.isPending?0.6:1 }}>
+            {deleteM.isPending?"Menghapus...":"Ya, Hapus"}
           </button>
-          <button onClick={() => setDeleteId(null)} className="btn btn-ghost px-5">Batal</button>
+          <button onClick={() => setDeleteId(null)} style={btnGhost}>Batal</button>
         </div>
       </Modal>
     </div>
