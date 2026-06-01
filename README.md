@@ -35,8 +35,8 @@ Buka **http://localhost:3000**
 
 **Default credentials** (ubah di `.env.local`):
 ```
-Username: admin
-Password: kkn146talangmarap
+Username: 
+Password: 
 ```
 
 ---
