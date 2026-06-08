@@ -27,7 +27,7 @@ export const timelineEvents: TimelineEvent[] = [
     description:
       "Seluruh anggota KKN 146 berangkat menuju Desa Talang Marap, Kecamatan Kelam Tengah, Kabupaten Kaur.",
     date: "2026-06-17",
-    status: "completed",
+    status: "upcoming",
     icon: "Car",
   },
   {
@@ -35,8 +35,8 @@ export const timelineEvents: TimelineEvent[] = [
     title: "Penerimaan & Pembukaan KKN",
     description:
       "Acara penerimaan resmi KKN 146 oleh Kepala Desa Talang Marap dan perangkat desa.",
-    date: "2026-06-18",
-    status: "completed",
+    date: "2026-06-17",
+    status: "upcoming",
     icon: "Users",
   },
   {
@@ -44,9 +44,9 @@ export const timelineEvents: TimelineEvent[] = [
     title: "Pelaksanaan Program Kerja",
     description:
       "Pelaksanaan seluruh program kerja KKN 146 meliputi pendidikan, sosial, teknologi, lingkungan, UMKM, kesehatan, dan keagamaan.",
-    date: "2026-06-18",
-    endDate: "2026-07-28",
-    status: "ongoing",
+    date: "2026-06-17",
+    endDate: "2026-07-31",
+    status: "upcoming",
     icon: "Rocket",
   },
   {

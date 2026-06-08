@@ -86,7 +86,7 @@ export default function HeroSection() {
           {[
             { icon: Users, value: "8", label: "Anggota" },
             { icon: Zap, value: "8", label: "Proker" },
-            { icon: Calendar, value: "45", label: "Hari" },
+            { icon: Calendar, value: "44", label: "Hari" },
             { icon: MapPin, value: "1", label: "Desa" },
           ].map((s) => (
             <div key={s.label} style={{ background:"#111b2e", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16, padding:16, textAlign:"center" }}>
