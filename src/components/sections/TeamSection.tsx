@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef, useState } from "react";
-import { Users, Instagram, X, Quote, GraduationCap, Hash } from "lucide-react";
+import { Users, Instagram, X, GraduationCap } from "lucide-react";
 import { useMembers } from "@/hooks/useMembers";
 import { members as seedMembers } from "@/data/members";
 import { cn } from "@/lib/utils";
@@ -20,36 +20,68 @@ export default function TeamSection() {
   const { data: dbMembers } = useMembers();
   const members = (dbMembers ?? seedMembers) as unknown as MemberRow[];
 
+  // Ambil DPL dari anggota pertama (semua sama)
+  const dplName = members.length > 0 ? gdpl(members[0]) : null;
+
   return (
     <section id="tim" className="py-24 sm:py-32" style={{ background:"#0b1121" }} ref={ref}>
       <div className="wrapper">
-        <motion.div initial={{ opacity:0, y:16 }} animate={v?{opacity:1,y:0}:{}} className="text-center mb-16">
+
+        {/* Judul */}
+        <motion.div initial={{ opacity:0, y:16 }} animate={v?{opacity:1,y:0}:{}} className="text-center mb-10">
           <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-medium mb-5">
             <Users className="w-3.5 h-3.5" /> Tim KKN
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight mb-4">
             Anggota KKN <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">146</span>
           </h2>
-          <p style={{ color:"#94a3b8", maxWidth:560, margin:"0 auto", textAlign:"center" }}>{members.length} mahasiswa dari berbagai fakultas Universitas Bengkulu yang berdedikasi mengabdi di Desa Talang Marap.</p>
+          <p style={{ color:"#94a3b8", maxWidth:560, margin:"0 auto", textAlign:"center" }}>
+            {members.length} mahasiswa dari berbagai fakultas Universitas Bengkulu yang berdedikasi mengabdi di Desa Talang Marap.
+          </p>
         </motion.div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:16 }} className="max-sm:!grid-cols-1 max-md:!grid-cols-2">
+        {/* Box DPL — satu box tengah di atas */}
+        {dplName && (
+          <motion.div
+            initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay:0.1 }}
+            style={{ maxWidth:560, margin:"0 auto 32px" }}
+          >
+            <div style={{
+              background:"linear-gradient(135deg, rgba(16,185,129,0.08), rgba(6,182,212,0.08))",
+              border:"1px solid rgba(16,185,129,0.2)",
+              borderRadius:16,
+              padding:"20px 28px",
+              textAlign:"center",
+            }}>
+              <p style={{ fontSize:11, fontWeight:600, color:"#34d399", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:8 }}>
+                Dosen Pembimbing Lapangan
+              </p>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:12 }}>
+                <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <GraduationCap style={{ width:22, height:22, color:"#fff" }} />
+                </div>
+                <div style={{ textAlign:"left" }}>
+                  <p style={{ color:"#fff", fontWeight:700, fontSize:15 }}>{dplName}</p>
+                  <p style={{ color:"#64748b", fontSize:12, marginTop:2 }}>Jurusan Akuntansi · FEB Universitas Bengkulu</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Grid Anggota — 4 kolom */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:16 }} className="max-sm:!grid-cols-2 max-md:!grid-cols-2">
           {members.map((m, i) => (
-            <motion.div key={m.id} initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay:i*.05 }}
+            <motion.div key={m.id} initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay: 0.15 + i * 0.05 }}
               onClick={() => setSelected(m)}
-              className="bg-[#111b2e] border border-white/[0.06] rounded-2xl p-6 text-center cursor-pointer hover:border-white/[0.12] transition-all group">
-              <div className={cn("w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-black text-xl mb-4", gc(m))}>
+              className="bg-[#111b2e] border border-white/[0.06] rounded-2xl p-5 text-center cursor-pointer hover:border-white/[0.12] transition-all group">
+              <div className={cn("w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-black text-lg mb-3", gc(m))}>
                 {gi(m)}
               </div>
               <p className="text-white font-bold text-sm mb-1 group-hover:text-emerald-400 transition-colors line-clamp-1">{m.name}</p>
               <p className="text-xs text-slate-400 mb-1">{m.role}</p>
               <p className="text-[11px] text-slate-500 font-mono">{m.nim}</p>
-              {gdpl(m) && (
-                <p className="text-[10px] text-slate-500 mt-2 line-clamp-1">
-                  <span className="text-slate-600">DPL: </span>{gdpl(m)}
-                </p>
-              )}
-              {m.quote && <p className="text-[11px] text-slate-400 italic mt-3 line-clamp-2">&ldquo;{m.quote}&rdquo;</p>}
+              {m.quote && <p className="text-[10px] text-slate-400 italic mt-3 line-clamp-2">&ldquo;{m.quote}&rdquo;</p>}
             </motion.div>
           ))}
         </div>
@@ -59,15 +91,20 @@ export default function TeamSection() {
         </p>
       </div>
 
+      {/* Modal detail anggota */}
       <AnimatePresence>
         {selected && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setSelected(null)}>
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            onClick={() => setSelected(null)}>
             <motion.div initial={{ scale:.9 }} animate={{ scale:1 }} exit={{ scale:.9 }}
-              className="bg-[#111b2e] border border-white/[0.08] rounded-2xl w-full max-w-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              className="bg-[#111b2e] border border-white/[0.08] rounded-2xl w-full max-w-sm overflow-hidden"
+              onClick={(e) => e.stopPropagation()}>
               <div className={cn("h-20 bg-gradient-to-br", gc(selected))} />
               <div className="px-6 pb-6 -mt-10 text-center">
-                <div className={cn("w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-black text-2xl border-4 border-[#111b2e]", gc(selected))}>{gi(selected)}</div>
+                <div className={cn("w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-black text-2xl border-4 border-[#111b2e]", gc(selected))}>
+                  {gi(selected)}
+                </div>
                 <h3 className="text-white font-bold text-lg mt-3">{selected.name}</h3>
                 <p className="text-emerald-400 text-sm">{selected.role}</p>
                 <div className="mt-4 space-y-2 text-left bg-white/[0.03] rounded-xl p-4 text-sm">
@@ -89,7 +126,9 @@ export default function TeamSection() {
                   </a>
                 )}
               </div>
-              <button onClick={() => setSelected(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/30 flex items-center justify-center text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
+              <button onClick={() => setSelected(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/30 flex items-center justify-center text-white/70 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
             </motion.div>
           </motion.div>
         )}
