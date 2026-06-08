@@ -17,7 +17,7 @@ export default function Footer() {
           <div>
             <h4 style={{ color:"#fff", fontWeight:600, fontSize:13, marginBottom:16 }}>Quick Links</h4>
             <ul style={{ listStyle:"none", display:"flex", flexDirection:"column", gap:8 }}>
-              {["Home","Tentang","Tim","Proker","Timeline","Dokumentasi","Kontak"].map((l) => (
+              {["Home","Tentang","Tim","Proker","Timeline","Dokumentasi","Piket","Kontak"].map((l) => (
                 <li key={l}><a href={`#${l.toLowerCase()}`} style={{ color:"#94a3b8", fontSize:13, textDecoration:"none" }}>{l}</a></li>
               ))}
             </ul>

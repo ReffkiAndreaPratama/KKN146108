@@ -6,6 +6,7 @@ import TeamSection from "@/components/sections/TeamSection";
 import ProkerSection from "@/components/sections/ProkerSection";
 import TimelineSection from "@/components/sections/TimelineSection";
 import DokumentasiSection from "@/components/sections/DokumentasiSection";
+import PiketSection from "@/components/sections/PiketSection";
 import KontakSection from "@/components/sections/KontakSection";
 
 export default function Home() {
@@ -18,6 +19,7 @@ export default function Home() {
       <ProkerSection />
       <TimelineSection />
       <DokumentasiSection />
+      <PiketSection />
       <KontakSection />
       <Footer />
     </main>

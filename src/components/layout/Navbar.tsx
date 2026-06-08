@@ -12,6 +12,7 @@ const LINKS = [
   { id: "proker", label: "Proker" },
   { id: "timeline", label: "Timeline" },
   { id: "dokumentasi", label: "Dokumentasi" },
+  { id: "piket", label: "Piket" },
   { id: "kontak", label: "Kontak" },
 ];
 
