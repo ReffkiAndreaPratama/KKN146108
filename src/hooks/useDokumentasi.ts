@@ -9,7 +9,7 @@ export interface DokumentasiPayload {
   title: string;
   category: string;
   date: string;
-  photo_url: string;
+  photo_url?: string | null;
   description?: string | null;
   uploader: string;
 }

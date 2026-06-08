@@ -91,7 +91,7 @@ create table if not exists dokumentasi (
   title       text not null,
   category    text not null default 'Kegiatan',
   date        date not null,
-  photo_url   text not null,
+  photo_url   text,
   description text,
   uploader    text not null default 'Admin',
   created_at  timestamptz default now()
