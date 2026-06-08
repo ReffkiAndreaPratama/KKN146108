@@ -11,6 +11,7 @@ import type { MemberRow } from "@/types/database";
 
 const gc = (m: MemberRow) => (m as unknown as { color?: string }).color ?? "from-emerald-500 to-cyan-500";
 const gi = (m: MemberRow) => (m as unknown as { initials?: string }).initials ?? m.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+const gdpl = (m: MemberRow) => (m as unknown as { dpl?: string | null }).dpl ?? null;
 
 export default function TeamSection() {
   const ref = useRef(null);
@@ -68,10 +69,10 @@ export default function TeamSection() {
                   <div className="flex justify-between"><span className="text-slate-400">NIM</span><span className="text-white font-medium">{selected.nim}</span></div>
                   <div className="flex justify-between"><span className="text-slate-400">Fakultas</span><span className="text-white font-medium">{selected.faculty}</span></div>
                   <div className="flex justify-between"><span className="text-slate-400">Prodi</span><span className="text-white font-medium">{selected.prodi}</span></div>
-                  {(selected as unknown as { dpl?: string }).dpl && (
+                  {gdpl(selected) && (
                     <div className="flex justify-between gap-4">
                       <span className="text-slate-400 shrink-0">DPL</span>
-                      <span className="text-white font-medium text-right">{(selected as unknown as { dpl?: string }).dpl}</span>
+                      <span className="text-white font-medium text-right">{gdpl(selected)}</span>
                     </div>
                   )}
                 </div>
