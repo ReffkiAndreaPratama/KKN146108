@@ -36,8 +36,10 @@ const CAT_TEXT: Record<string, string> = {
   Sosialisasi: "#f87171",
 };
 
-// Fallback seed data (emoji placeholders — shown when DB is empty)
-const ITEMS_SEED = [
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isSeedItem = (id: string) => !UUID_REGEX.test(id);
+
+const ITEMS_SEED: DokumentasiRow[] = [
   { id:"1", title:"Survey Lokasi KKN",     category:"Survey",        date:"2026-05-14", photo_url:"", description:null, uploader:"Admin", created_at:"" },
   { id:"2", title:"Rapat Koordinasi Tim",   category:"Rapat",         date:"2026-05-16", photo_url:"", description:null, uploader:"Admin", created_at:"" },
   { id:"3", title:"Penerimaan di Desa",     category:"Kegiatan",      date:"2026-05-29", photo_url:"", description:null, uploader:"Admin", created_at:"" },
@@ -46,7 +48,7 @@ const ITEMS_SEED = [
   { id:"6", title:"Sosialisasi Kesehatan",  category:"Sosialisasi",   date:"2026-06-10", photo_url:"", description:null, uploader:"Admin", created_at:"" },
   { id:"7", title:"Pelatihan UMKM",         category:"Kegiatan",      date:"2026-06-05", photo_url:"", description:null, uploader:"Admin", created_at:"" },
   { id:"8", title:"Pengajian Rutin",        category:"Kegiatan",      date:"2026-06-03", photo_url:"", description:null, uploader:"Admin", created_at:"" },
-] as DokumentasiRow[];
+];
 
 const EMPTY_FORM: DokumentasiPayload = { title:"", category:"Kegiatan", date:"", photo_url:"", description:"", uploader:"Admin" };
 
@@ -56,9 +58,8 @@ async function uploadPhoto(file: File, folder = "dokumentasi"): Promise<{ url: s
   const { error } = await supabase.storage.from("photos").upload(fileName, file, { cacheControl:"3600", upsert:false });
   if (error) {
     console.error("Upload error:", error);
-    // Bucket tidak ada
     if (error.message?.includes("Bucket not found") || (error as { statusCode?: string }).statusCode === "404") {
-      return { url: null, error: 'Storage bucket "photos" belum dibuat. Buka Supabase Dashboard → Storage → New Bucket → nama: "photos", centang Public.' };
+      return { url: null, error: 'Storage bucket "photos" belum dibuat.' };
     }
     return { url: null, error: `Upload gagal: ${error.message}` };
   }
@@ -68,12 +69,19 @@ async function uploadPhoto(file: File, folder = "dokumentasi"): Promise<{ url: s
 
 export default function DokumentasiDashboardPage() {
   const { data: dbItems } = useDokumentasi();
-  const createDoc  = useCreateDokumentasi();
-  const updateDoc  = useUpdateDokumentasi();
-  const deleteDoc  = useDeleteDokumentasi();
+  const createDoc = useCreateDokumentasi();
+  const updateDoc = useUpdateDokumentasi();
+  const deleteDoc = useDeleteDokumentasi();
 
-  const isFromDB = dbItems && dbItems.length > 0;
-  const items: DokumentasiRow[] = isFromDB ? dbItems : ITEMS_SEED;
+  // Seed items yang belum di-push ke DB (hilang setelah ada data DB)
+  const [hiddenSeedIds, setHiddenSeedIds] = useState<Set<string>>(new Set());
+
+  const dbList: DokumentasiRow[] = dbItems ?? [];
+  const visibleSeeds = ITEMS_SEED.filter(s => !hiddenSeedIds.has(s.id));
+  // Tampilkan DB + seed yang belum ada di DB (gabung, DB di depan)
+  const items: DokumentasiRow[] = dbList.length > 0
+    ? [...dbList, ...visibleSeeds]
+    : visibleSeeds;
 
   const [activeCat, setActiveCat] = useState("Semua");
   const [showForm,  setShowForm]  = useState(false);
@@ -116,6 +124,7 @@ export default function DokumentasiDashboardPage() {
     e.preventDefault();
     setUploading(true);
     setUploadError(null);
+
     let photoUrl = form.photo_url;
     if (photoFile) {
       const { url, error: uploadErr } = await uploadPhoto(photoFile, "dokumentasi");
@@ -126,12 +135,20 @@ export default function DokumentasiDashboardPage() {
       }
       if (url) photoUrl = url;
     }
+
     const payload: DokumentasiPayload = { ...form, photo_url: photoUrl };
+
     try {
-      if (editTarget) {
+      if (editTarget && !isSeedItem(editTarget.id)) {
+        // Item dari DB → update normal
         await updateDoc.mutateAsync({ id: editTarget.id, ...payload });
       } else {
+        // Item baru ATAU seed item → selalu insert sebagai record baru
         await createDoc.mutateAsync(payload);
+        // Kalau seed yang di-edit, sembunyikan seed-nya (sudah ada versi DB-nya)
+        if (editTarget && isSeedItem(editTarget.id)) {
+          setHiddenSeedIds(prev => new Set([...prev, editTarget.id]));
+        }
       }
       setShowForm(false);
       setEditTarget(null);
@@ -144,6 +161,19 @@ export default function DokumentasiDashboardPage() {
       setUploadError(`Gagal menyimpan: ${msg}`);
     }
     setUploading(false);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    if (isSeedItem(deleteId)) {
+      // Seed item → hanya sembunyikan dari tampilan, tidak ada di DB
+      setHiddenSeedIds(prev => new Set([...prev, deleteId]));
+      setDeleteId(null);
+    } else {
+      // DB item → hapus dari DB
+      await deleteDoc.mutateAsync(deleteId);
+      setDeleteId(null);
+    }
   };
 
   const isBusy = uploading || createDoc.isPending || updateDoc.isPending;
@@ -193,8 +223,7 @@ export default function DokumentasiDashboardPage() {
                 <span style={{ padding:"3px 8px", borderRadius:6, fontSize:10, fontWeight:600, background: CAT_COLORS[item.category] ?? "rgba(100,116,139,0.1)", color: CAT_TEXT[item.category] ?? "#94a3b8" }}>{item.category}</span>
                 <span style={{ fontSize:11, color:"#64748b" }}>{item.date ? formatDate(item.date) : ""}</span>
               </div>
-              {/* Actions — hanya tampil untuk data dari DB */}
-              {isFromDB && (
+              {/* Actions */}
               <div style={{ display:"flex", gap:6, marginTop:"auto", paddingTop:8, borderTop:"1px solid rgba(255,255,255,0.04)" }}>
                 <button onClick={() => openEdit(item)}
                   style={{ flex:1, padding:"7px 0", borderRadius:8, border:"none", background:"rgba(255,255,255,0.04)", color:"#94a3b8", fontSize:11, fontWeight:500, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
@@ -205,7 +234,6 @@ export default function DokumentasiDashboardPage() {
                   <Trash2 style={{ width:12, height:12 }} />
                 </button>
               </div>
-              )}
             </div>
           </div>
         ))}
@@ -294,9 +322,13 @@ export default function DokumentasiDashboardPage() {
 
       {/* Delete Confirm Modal */}
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Foto?" size="sm">
-        <p style={{ color:"#94a3b8", fontSize:14, marginBottom:24 }}>Foto ini akan dihapus secara permanen.</p>
+        <p style={{ color:"#94a3b8", fontSize:14, marginBottom:24 }}>
+          {deleteId && isSeedItem(deleteId)
+            ? "Item ini akan disembunyikan dari tampilan."
+            : "Foto ini akan dihapus secara permanen dari database."}
+        </p>
         <div style={{ display:"flex", gap:12 }}>
-          <button onClick={async () => { if(deleteId){ await deleteDoc.mutateAsync(deleteId); setDeleteId(null); }}}
+          <button onClick={handleDelete}
             disabled={deleteDoc.isPending}
             style={{ ...btnDanger, flex:1, justifyContent:"center", opacity:deleteDoc.isPending?0.6:1 }}>
             {deleteDoc.isPending ? "Menghapus..." : "Ya, Hapus"}
