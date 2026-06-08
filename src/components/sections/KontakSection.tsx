@@ -37,48 +37,69 @@ export default function KontakSection() {
           <p style={{ color:"#94a3b8", maxWidth:480, margin:"0 auto", textAlign:"center" }}>Ada pertanyaan atau ingin berkolaborasi? Hubungi kami.</p>
         </motion.div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:32 }} className="max-lg:!grid-cols-1">
-          {/* Left */}
-          <div className="space-y-4">
-            {CONTACTS.map((c) => (
-              <a key={c.label} href={c.href} target={c.href.startsWith("http")?"_blank":undefined} rel="noopener noreferrer"
-                className="flex items-center gap-4 p-4 bg-[#111b2e] border border-white/[0.06] rounded-2xl hover:border-white/[0.12] transition-all">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0"><c.icon className="w-4 h-4 text-emerald-400" /></div>
-                <div><p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium">{c.label}</p><p className="text-sm text-white font-medium">{c.value}</p></div>
-              </a>
-            ))}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:24 }} className="max-lg:!grid-cols-1">
+          {/* Left — Info Kontak */}
+          <div style={{ background:"#111b2e", border:"1px solid rgba(255,255,255,0.06)", borderRadius:24, padding:"32px 28px", display:"flex", flexDirection:"column", gap:0 }}>
+            <h3 style={{ color:"#fff", fontWeight:700, fontSize:18, marginBottom:8 }}>Info Kontak</h3>
+            <p style={{ color:"#64748b", fontSize:13, marginBottom:28 }}>Jangan ragu untuk menghubungi kami.</p>
+            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+              {CONTACTS.map((c) => (
+                <a key={c.label} href={c.href} target={c.href.startsWith("http")?"_blank":undefined} rel="noopener noreferrer"
+                  style={{ display:"flex", alignItems:"center", gap:16, padding:"16px 20px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16, textDecoration:"none", transition:"border-color 0.2s" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(16,185,129,0.3)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}>
+                  <div style={{ width:44, height:44, borderRadius:12, background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.15)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <c.icon style={{ width:18, height:18, color:"#34d399" }} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize:11, color:"#475569", textTransform:"uppercase", letterSpacing:"0.08em", fontWeight:600, marginBottom:3 }}>{c.label}</p>
+                    <p style={{ fontSize:14, color:"#e2e8f0", fontWeight:500 }}>{c.value}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
           </div>
 
-          {/* Right: Form */}
-          <div className="bg-[#111b2e] border border-white/[0.06] rounded-2xl p-6 sm:p-8">
-            <h3 className="text-white font-bold text-lg mb-6">Kirim Pesan</h3>
+          {/* Right — Form */}
+          <div style={{ background:"#111b2e", border:"1px solid rgba(255,255,255,0.06)", borderRadius:24, padding:"32px 28px" }}>
+            <h3 style={{ color:"#fff", fontWeight:700, fontSize:18, marginBottom:8 }}>Kirim Pesan</h3>
+            <p style={{ color:"#64748b", fontSize:13, marginBottom:28 }}>Kami akan membalas secepatnya.</p>
             {status === "done" ? (
-              <div className="text-center py-12">
-                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
-                <p className="text-white font-bold text-lg">Pesan Terkirim!</p>
-                <p className="text-slate-400 text-sm mt-1">Kami akan segera merespons.</p>
+              <div style={{ textAlign:"center", padding:"48px 0" }}>
+                <CheckCircle2 style={{ width:48, height:48, color:"#34d399", margin:"0 auto 16px" }} />
+                <p style={{ color:"#fff", fontWeight:700, fontSize:18 }}>Pesan Terkirim!</p>
+                <p style={{ color:"#64748b", fontSize:13, marginTop:6 }}>Kami akan segera merespons.</p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:16 }}>
                 <div>
-                  <label className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1.5 block">Nama</label>
+                  <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>Nama</label>
                   <input type="text" value={form.name} onChange={(e) => setForm({...form,name:e.target.value})} required
-                    className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-slate-600" placeholder="Nama lengkap" />
+                    placeholder="Nama lengkap"
+                    style={{ width:"100%", padding:"12px 16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:12, color:"#fff", fontSize:14, outline:"none" }}
+                    onFocus={(e) => e.target.style.borderColor="rgba(16,185,129,0.4)"}
+                    onBlur={(e) => e.target.style.borderColor="rgba(255,255,255,0.08)"} />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1.5 block">Email</label>
+                  <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>Email</label>
                   <input type="email" value={form.email} onChange={(e) => setForm({...form,email:e.target.value})} required
-                    className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-slate-600" placeholder="email@example.com" />
+                    placeholder="email@example.com"
+                    style={{ width:"100%", padding:"12px 16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:12, color:"#fff", fontSize:14, outline:"none" }}
+                    onFocus={(e) => e.target.style.borderColor="rgba(16,185,129,0.4)"}
+                    onBlur={(e) => e.target.style.borderColor="rgba(255,255,255,0.08)"} />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1.5 block">Pesan</label>
-                  <textarea value={form.message} onChange={(e) => setForm({...form,message:e.target.value})} required rows={4}
-                    className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-slate-600 resize-none" placeholder="Tulis pesan..." />
+                  <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>Pesan</label>
+                  <textarea value={form.message} onChange={(e) => setForm({...form,message:e.target.value})} required rows={5}
+                    placeholder="Tulis pesan..."
+                    style={{ width:"100%", padding:"12px 16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:12, color:"#fff", fontSize:14, outline:"none", resize:"none" }}
+                    onFocus={(e) => e.target.style.borderColor="rgba(16,185,129,0.4)"}
+                    onBlur={(e) => e.target.style.borderColor="rgba(255,255,255,0.08)"} />
                 </div>
-                {status === "error" && <p className="text-sm text-red-400">Gagal mengirim. Coba lagi.</p>}
+                {status === "error" && <p style={{ color:"#f87171", fontSize:13 }}>Gagal mengirim. Coba lagi.</p>}
                 <button type="submit" disabled={status==="loading"}
-                  className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold rounded-xl text-sm inline-flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50">
-                  {status==="loading" ? "Mengirim..." : <><Send className="w-4 h-4" /> Kirim Pesan</>}
+                  style={{ width:"100%", padding:"14px 0", background:"linear-gradient(to right, #10b981, #06b6d4)", color:"#fff", fontWeight:700, fontSize:14, borderRadius:12, border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, opacity: status==="loading" ? 0.6 : 1, marginTop:4 }}>
+                  {status==="loading" ? "Mengirim..." : <><Send style={{ width:16, height:16 }} /> Kirim Pesan</>}
                 </button>
               </form>
             )}
