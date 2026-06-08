@@ -12,7 +12,6 @@ import type { MemberRow } from "@/types/database";
 const gc = (m: MemberRow) => (m as unknown as { color?: string }).color ?? "from-emerald-500 to-cyan-500";
 const gi = (m: MemberRow) => (m as unknown as { initials?: string }).initials ?? m.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 const gdpl = (m: MemberRow) => (m as unknown as { dpl?: string | null }).dpl ?? null;
-
 export default function TeamSection() {
   const ref = useRef(null);
   const v = useInView(ref, { once: true, margin: "-80px" });
@@ -84,9 +83,16 @@ export default function TeamSection() {
             <motion.div key={m.id} initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay: 0.15 + i * 0.05 }}
               onClick={() => setSelected(m)}
               className="bg-[#111b2e] border border-white/[0.06] rounded-2xl p-5 text-center cursor-pointer hover:border-white/[0.12] transition-all group">
-              <div className={cn("w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-black text-lg mb-3", gc(m))}>
-                {gi(m)}
-              </div>
+              {/* Avatar — foto jika ada, inisial jika tidak */}
+              {m.photo_url ? (
+                <div className="w-14 h-14 mx-auto rounded-2xl overflow-hidden mb-3 border-2 border-white/10">
+                  <img src={m.photo_url} alt={m.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                </div>
+              ) : (
+                <div className={cn("w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-black text-lg mb-3", gc(m))}>
+                  {gi(m)}
+                </div>
+              )}
               <p className="text-white font-bold text-sm mb-1 group-hover:text-emerald-400 transition-colors line-clamp-1">{m.name}</p>
               <p className="text-xs text-slate-400 mb-1">{m.role}</p>
               <p className="text-[11px] text-slate-500 font-mono">{m.nim}</p>
@@ -111,9 +117,15 @@ export default function TeamSection() {
               onClick={(e) => e.stopPropagation()}>
               <div className={cn("h-20 bg-gradient-to-br", gc(selected))} />
               <div className="px-6 pb-6 -mt-10 text-center">
-                <div className={cn("w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-black text-2xl border-4 border-[#111b2e]", gc(selected))}>
-                  {gi(selected)}
-                </div>
+                {selected.photo_url ? (
+                  <div className="w-20 h-20 mx-auto rounded-2xl overflow-hidden border-4 border-[#111b2e]">
+                    <img src={selected.photo_url} alt={selected.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                  </div>
+                ) : (
+                  <div className={cn("w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-black text-2xl border-4 border-[#111b2e]", gc(selected))}>
+                    {gi(selected)}
+                  </div>
+                )}
                 <h3 className="text-white font-bold text-lg mt-3">{selected.name}</h3>
                 <p className="text-emerald-400 text-sm">{selected.role}</p>
                 <div className="mt-4 space-y-2 text-left bg-white/[0.03] rounded-xl p-4 text-sm">
