@@ -50,13 +50,20 @@ const ITEMS_SEED = [
 
 const EMPTY_FORM: DokumentasiPayload = { title:"", category:"Kegiatan", date:"", photo_url:"", description:"", uploader:"Admin" };
 
-async function uploadPhoto(file: File, folder = "dokumentasi"): Promise<string | null> {
+async function uploadPhoto(file: File, folder = "dokumentasi"): Promise<{ url: string | null; error: string | null }> {
   const ext = file.name.split(".").pop();
   const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   const { error } = await supabase.storage.from("photos").upload(fileName, file, { cacheControl:"3600", upsert:false });
-  if (error) { console.error("Upload error:", error); return null; }
+  if (error) {
+    console.error("Upload error:", error);
+    // Bucket tidak ada
+    if (error.message?.includes("Bucket not found") || (error as { statusCode?: string }).statusCode === "404") {
+      return { url: null, error: 'Storage bucket "photos" belum dibuat. Buka Supabase Dashboard → Storage → New Bucket → nama: "photos", centang Public.' };
+    }
+    return { url: null, error: `Upload gagal: ${error.message}` };
+  }
   const { data } = supabase.storage.from("photos").getPublicUrl(fileName);
-  return data.publicUrl;
+  return { url: data.publicUrl, error: null };
 }
 
 export default function DokumentasiDashboardPage() {
@@ -75,6 +82,7 @@ export default function DokumentasiDashboardPage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const allCats = ["Semua", ...CATEGORIES];
@@ -85,6 +93,7 @@ export default function DokumentasiDashboardPage() {
     setPhotoFile(null);
     setPhotoPreview(null);
     setEditTarget(null);
+    setUploadError(null);
     setShowForm(true);
   };
 
@@ -93,6 +102,7 @@ export default function DokumentasiDashboardPage() {
     setPhotoFile(null);
     setPhotoPreview(item.photo_url || null);
     setEditTarget(item);
+    setUploadError(null);
     setShowForm(true);
   };
 
@@ -104,9 +114,15 @@ export default function DokumentasiDashboardPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
+    setUploadError(null);
     let photoUrl = form.photo_url;
     if (photoFile) {
-      const url = await uploadPhoto(photoFile, "dokumentasi");
+      const { url, error: uploadErr } = await uploadPhoto(photoFile, "dokumentasi");
+      if (uploadErr) {
+        setUploadError(uploadErr);
+        setUploading(false);
+        return;
+      }
       if (url) photoUrl = url;
     }
     const payload: DokumentasiPayload = { ...form, photo_url: photoUrl };
@@ -120,8 +136,10 @@ export default function DokumentasiDashboardPage() {
       setEditTarget(null);
       setPhotoFile(null);
       setPhotoPreview(null);
+      setUploadError(null);
     } catch (err) {
       console.error(err);
+      setUploadError("Gagal menyimpan data. Periksa koneksi Supabase.");
     }
     setUploading(false);
   };
@@ -197,9 +215,15 @@ export default function DokumentasiDashboardPage() {
       )}
 
       {/* Add/Edit Modal */}
-      <Modal open={showForm} onClose={() => { setShowForm(false); setEditTarget(null); setPhotoFile(null); setPhotoPreview(null); }}
+      <Modal open={showForm} onClose={() => { setShowForm(false); setEditTarget(null); setPhotoFile(null); setPhotoPreview(null); setUploadError(null); }}
         title={editTarget ? "Edit Dokumentasi" : "Tambah Dokumentasi"} size="lg">
         <form onSubmit={handleSave} style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          {/* Error banner */}
+          {uploadError && (
+            <div style={{ padding:"10px 14px", background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.25)", borderRadius:10, color:"#f87171", fontSize:12, lineHeight:1.5 }}>
+              ⚠️ {uploadError}
+            </div>
+          )}
           {/* Photo Upload */}
           <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
             <div style={{ position:"relative" }}>
@@ -257,7 +281,7 @@ export default function DokumentasiDashboardPage() {
               <Save style={{ width:14, height:14 }} />
               {uploading ? "Mengupload foto..." : isBusy ? "Menyimpan..." : "Simpan"}
             </button>
-            <button type="button" onClick={() => { setShowForm(false); setEditTarget(null); setPhotoFile(null); setPhotoPreview(null); }} style={btnGhost}>
+            <button type="button" onClick={() => { setShowForm(false); setEditTarget(null); setPhotoFile(null); setPhotoPreview(null); setUploadError(null); }} style={btnGhost}>
               <X style={{ width:14, height:14 }} /> Batal
             </button>
           </div>

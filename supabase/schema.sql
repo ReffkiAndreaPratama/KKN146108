@@ -290,3 +290,36 @@ create trigger piket_updated_at before update on piket
 update members
 set dpl = 'Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.'
 where dpl is null;
+
+-- ─── STORAGE BUCKET & POLICIES ───────────────────────────────
+-- Buat bucket "photos" sebagai public bucket (skip jika sudah ada)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'photos',
+  'photos',
+  true,
+  10485760,  -- 10 MB max per file
+  ARRAY['image/jpeg','image/png','image/webp','image/gif',
+        'application/pdf','application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+)
+on conflict (id) do update set public = true;
+
+-- Storage policies — izinkan siapa saja baca & upload ke bucket "photos"
+drop policy if exists "Public read storage photos"   on storage.objects;
+drop policy if exists "Public upload storage photos"  on storage.objects;
+drop policy if exists "Public delete storage photos"  on storage.objects;
+
+create policy "Public read storage photos"
+  on storage.objects for select
+  using (bucket_id = 'photos');
+
+create policy "Public upload storage photos"
+  on storage.objects for insert
+  with check (bucket_id = 'photos');
+
+create policy "Public delete storage photos"
+  on storage.objects for delete
+  using (bucket_id = 'photos');

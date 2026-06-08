@@ -16,7 +16,7 @@
 3. Copy seluruh isi file `supabase/schema.sql`
 4. Paste ke SQL Editor
 5. Klik **Run** (Ctrl+Enter)
-6. Semua tabel + seed data akan dibuat otomatis
+6. Semua tabel + seed data + storage bucket akan dibuat otomatis
 
 ### 3. Ambil API Keys
 1. Buka **Settings** → **API**
@@ -52,6 +52,7 @@ npm run dev
 - ✅ **Auto updated_at** — timestamp otomatis update
 - ✅ **UUID primary keys** — ID unik untuk setiap record
 - ✅ **Fallback ke static data** — jika DB belum dikonfigurasi, app tetap jalan
+- ✅ **Storage bucket `photos`** — untuk upload foto dokumentasi, arsip, dan foto anggota
 
 ## Deploy ke Vercel
 
