@@ -97,6 +97,50 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["attendance"]["Insert"]>;
       };
+      dokumentasi: {
+        Row: {
+          id: string;
+          title: string;
+          category: string;
+          date: string;
+          photo_url: string;
+          description: string | null;
+          uploader: string;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["dokumentasi"]["Row"], "id" | "created_at"> & { id?: string };
+        Update: Partial<Database["public"]["Tables"]["dokumentasi"]["Insert"]>;
+      };
+      arsip: {
+        Row: {
+          id: string;
+          name: string;
+          category: string;
+          file_url: string;
+          file_type: string;
+          size_bytes: number;
+          uploader: string;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["arsip"]["Row"], "id" | "created_at"> & { id?: string };
+        Update: Partial<Database["public"]["Tables"]["arsip"]["Insert"]>;
+      };
+      inventaris: {
+        Row: {
+          id: string;
+          name: string;
+          category: string;
+          quantity: number;
+          unit: string;
+          owner: string | null;
+          status: "tersedia" | "kurang" | "tidak_ada";
+          checked: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["inventaris"]["Row"], "id" | "created_at" | "updated_at"> & { id?: string };
+        Update: Partial<Database["public"]["Tables"]["inventaris"]["Insert"]>;
+      };
     };
   };
 }
@@ -118,3 +162,10 @@ export type JournalInsert   = Database["public"]["Tables"]["journal"]["Insert"];
 
 export type AttendanceRow   = Database["public"]["Tables"]["attendance"]["Row"];
 export type AttendanceInsert = Database["public"]["Tables"]["attendance"]["Insert"];
+
+export type DokumentasiRow    = Database["public"]["Tables"]["dokumentasi"]["Row"];
+export type DokumentasiInsert = Database["public"]["Tables"]["dokumentasi"]["Insert"];
+export type ArsipRow          = Database["public"]["Tables"]["arsip"]["Row"];
+export type ArsipInsert       = Database["public"]["Tables"]["arsip"]["Insert"];
+export type InventarisRow     = Database["public"]["Tables"]["inventaris"]["Row"];
+export type InventarisInsert  = Database["public"]["Tables"]["inventaris"]["Insert"];

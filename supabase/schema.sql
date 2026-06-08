@@ -85,6 +85,46 @@ create table if not exists attendance (
   unique(member_id, date)
 );
 
+-- ─── DOKUMENTASI ─────────────────────────────────────────────
+create table if not exists dokumentasi (
+  id          uuid primary key default uuid_generate_v4(),
+  title       text not null,
+  category    text not null default 'Kegiatan',
+  date        date not null,
+  photo_url   text not null,
+  description text,
+  uploader    text not null default 'Admin',
+  created_at  timestamptz default now()
+);
+
+alter table dokumentasi add column if not exists description text;
+
+-- ─── ARSIP ───────────────────────────────────────────────────
+create table if not exists arsip (
+  id          uuid primary key default uuid_generate_v4(),
+  name        text not null,
+  category    text not null default 'Administrasi',
+  file_url    text not null,
+  file_type   text not null default 'pdf',
+  size_bytes  bigint not null default 0,
+  uploader    text not null default 'Admin',
+  created_at  timestamptz default now()
+);
+
+-- ─── INVENTARIS ──────────────────────────────────────────────
+create table if not exists inventaris (
+  id          uuid primary key default uuid_generate_v4(),
+  name        text not null,
+  category    text not null default 'sekretariat',
+  quantity    integer not null default 1,
+  unit        text not null default 'buah',
+  owner       text,
+  status      text not null default 'tersedia' check (status in ('tersedia','kurang','tidak_ada')),
+  checked     boolean not null default false,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+
 -- ─── AUTO UPDATE updated_at ──────────────────────────────────
 create or replace function update_updated_at()
 returns trigger as $$
@@ -100,6 +140,28 @@ create trigger members_updated_at before update on members
 
 drop trigger if exists proker_updated_at on proker;
 create trigger proker_updated_at before update on proker
+  for each row execute function update_updated_at();
+
+alter table dokumentasi  enable row level security;
+alter table arsip        enable row level security;
+alter table inventaris   enable row level security;
+
+drop policy if exists "public read dokumentasi"  on dokumentasi;
+drop policy if exists "public read arsip"        on arsip;
+drop policy if exists "public read inventaris"   on inventaris;
+drop policy if exists "anon write dokumentasi"   on dokumentasi;
+drop policy if exists "anon write arsip"         on arsip;
+drop policy if exists "anon write inventaris"    on inventaris;
+
+create policy "public read dokumentasi"  on dokumentasi  for select using (true);
+create policy "public read arsip"        on arsip        for select using (true);
+create policy "public read inventaris"   on inventaris   for select using (true);
+create policy "anon write dokumentasi"   on dokumentasi  for all using (true) with check (true);
+create policy "anon write arsip"         on arsip        for all using (true) with check (true);
+create policy "anon write inventaris"    on inventaris   for all using (true) with check (true);
+
+drop trigger if exists inventaris_updated_at on inventaris;
+create trigger inventaris_updated_at before update on inventaris
   for each row execute function update_updated_at();
 
 -- ─── ROW LEVEL SECURITY ──────────────────────────────────────
