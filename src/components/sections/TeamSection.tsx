@@ -86,21 +86,23 @@ export default function TeamSection() {
 
         {/* ── Card DPL — sama persis seperti kartu anggota ── */}
         <motion.div initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay:0.05 }}
-          style={{ maxWidth:220, margin:"0 auto 48px" }}>
+          style={{ maxWidth:320, margin:"0 auto 48px" }}>
           <div className="bg-[#111b2e] border border-emerald-500/30 rounded-2xl overflow-hidden shadow-lg shadow-emerald-900/20">
             {/* Foto DPL */}
-            {dplPhoto ? (
-              <div style={{ width:"100%", aspectRatio:"3/4", overflow:"hidden", background:"#0d1525" }}>
-                <img src={dplPhoto} alt="DPL"
-                  style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top" }} />
-              </div>
-            ) : (
-              <div style={{ width:"100%", aspectRatio:"3/4", background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <GraduationCap style={{ width:64, height:64, color:"#fff" }} />
-              </div>
-            )}
+            <div style={{ padding:"24px 16px 0", display:"flex", justifyContent:"center" }}>
+              {dplPhoto ? (
+                <div style={{ width:100, height:100, borderRadius:20, overflow:"hidden", background:"#0d1525", flexShrink:0 }}>
+                  <img src={dplPhoto} alt="DPL"
+                    style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top" }} />
+                </div>
+              ) : (
+                <div style={{ width:100, height:100, borderRadius:20, background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <GraduationCap style={{ width:48, height:48, color:"#fff" }} />
+                </div>
+              )}
+            </div>
             {/* Keterangan DPL */}
-            <div style={{ padding:"14px 16px", textAlign:"center" }}>
+            <div style={{ padding:"14px 16px 20px", textAlign:"center" }}>
               <p style={{ fontSize:10, fontWeight:700, color:"#34d399", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:6 }}>
                 Dosen Pembimbing Lapangan
               </p>

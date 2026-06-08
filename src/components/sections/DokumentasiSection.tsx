@@ -52,7 +52,7 @@ export default function DokumentasiSection() {
           {filtered.map((item, i) => (
             <motion.div key={item.id} initial={{ opacity:0, scale:.95 }} animate={v?{opacity:1,scale:1}:{}} transition={{ delay:i*.05 }}
               onClick={() => setLb(i)} className="cursor-pointer group">
-              <div className={cn("relative h-48 sm:h-56 rounded-2xl overflow-hidden bg-gradient-to-br flex items-center justify-center border border-white/[0.06] group-hover:border-white/[0.12] transition-all", item.color)}>
+              <div className={cn("relative h-40 sm:h-44 rounded-2xl overflow-hidden bg-gradient-to-br flex items-center justify-center border border-white/[0.06] group-hover:border-white/[0.12] transition-all opacity-90", item.color)}>
                 <span className="text-5xl sm:text-6xl select-none">{item.emoji}</span>
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-end p-5 opacity-0 group-hover:opacity-100">
                   <div><p className="text-white font-bold text-sm">{item.title}</p><p className="text-white/70 text-xs">{item.date}</p></div>

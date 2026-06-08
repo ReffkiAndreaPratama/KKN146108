@@ -26,7 +26,7 @@ export default function PiketSection() {
   const piketMap = Object.fromEntries(piketData.map((p) => [p.date, p]));
 
   return (
-    <section id="piket" className="py-24 sm:py-32" style={{ background:"#0d1525" }} ref={ref}>
+    <section id="piket" className="py-24 sm:py-32" style={{ background:"#0b1121" }} ref={ref}>
       <div className="wrapper">
         {/* Header */}
         <motion.div initial={{ opacity:0, y:16 }} animate={v?{opacity:1,y:0}:{}} className="text-center mb-12">

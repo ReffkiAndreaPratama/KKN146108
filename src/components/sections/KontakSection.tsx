@@ -25,7 +25,7 @@ export default function KontakSection() {
   };
 
   return (
-    <section id="kontak" className="py-24 sm:py-32" style={{ background:"#0b1121" }} ref={ref}>
+    <section id="kontak" className="py-24 sm:py-32" style={{ background:"#0d1525" }} ref={ref}>
       <div className="wrapper">
         <motion.div initial={{ opacity:0, y:16 }} animate={v?{opacity:1,y:0}:{}} style={{ textAlign:"center", marginBottom:48 }}>
           <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-medium mb-5">
