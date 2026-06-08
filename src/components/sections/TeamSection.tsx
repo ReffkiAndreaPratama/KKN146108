@@ -9,27 +9,63 @@ import { members as seedMembers } from "@/data/members";
 import { cn } from "@/lib/utils";
 import type { MemberRow } from "@/types/database";
 
-const gc  = (m: MemberRow) => (m as any).color ?? "from-emerald-500 to-cyan-500";
-const gi  = (m: MemberRow) => (m as any).initials ?? m.name.split(" ").map((w:string)=>w[0]).join("").slice(0,2).toUpperCase();
-const gdpl = (m: MemberRow) => (m as any).dpl as string | null ?? null;
-const gdplPhoto = (m: MemberRow) => (m as any).dpl_photo_url as string | null ?? null;
+const gc       = (m: MemberRow) => (m as any).color       ?? "from-emerald-500 to-cyan-500";
+const gi       = (m: MemberRow) => (m as any).initials    ?? m.name.split(" ").map((w:string)=>w[0]).join("").slice(0,2).toUpperCase();
+const gdpl     = (m: MemberRow) => (m as any).dpl         as string | null ?? null;
+const gdplPhoto= (m: MemberRow) => (m as any).dpl_photo_url as string | null ?? null;
 
-// Data DPL hardcoded sebagai fallback (selalu tampil)
-const DPL_FALLBACK = {
+const DIVISION_ORDER = ["Ketua","Sekretaris","Bendahara","Humas","Humas & Acara","Acara","PDD"];
+
+const DPL = {
   name: "Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.",
   nip:  "NIP: 19700603 199903 1 001",
   info: "Jurusan Akuntansi · FEB Universitas Bengkulu",
 };
+
+function MemberCard({ m, i, v, onClick }: { m: MemberRow; i: number; v: boolean; onClick: ()=>void }) {
+  return (
+    <motion.div
+      initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay: 0.05 * i }}
+      onClick={onClick}
+      className="bg-[#111b2e] border border-white/[0.06] rounded-2xl overflow-hidden cursor-pointer hover:border-emerald-500/40 hover:shadow-xl hover:shadow-emerald-900/20 transition-all group">
+      {m.photo_url ? (
+        <div style={{ width:"100%", aspectRatio:"3/4", overflow:"hidden", background:"#0d1525" }}>
+          <img src={m.photo_url} alt={m.name}
+            className="group-hover:scale-105 transition-transform duration-300"
+            style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top" }} />
+        </div>
+      ) : (
+        <div className={cn("w-full bg-gradient-to-br flex items-center justify-center text-white font-black", gc(m))}
+          style={{ aspectRatio:"3/4", fontSize:52 }}>
+          {gi(m)}
+        </div>
+      )}
+      <div style={{ padding:"14px 16px", textAlign:"center" }}>
+        <p className="text-white font-bold text-sm group-hover:text-emerald-400 transition-colors line-clamp-1 mb-1">{m.name}</p>
+        <p className="text-xs text-emerald-400 font-medium mb-1">{m.role}</p>
+        <p className="text-[10px] text-slate-500 font-mono">{m.nim}</p>
+        {m.quote && <p className="text-[10px] text-slate-400 italic mt-2 line-clamp-2 leading-relaxed">&ldquo;{m.quote}&rdquo;</p>}
+      </div>
+    </motion.div>
+  );
+}
 
 export default function TeamSection() {
   const ref = useRef(null);
   const v   = useInView(ref, { once: true, margin: "-80px" });
   const [selected, setSelected] = useState<MemberRow | null>(null);
   const { data: dbMembers } = useMembers();
-  const members = (dbMembers ?? seedMembers) as unknown as MemberRow[];
+  const rawMembers = (dbMembers ?? seedMembers) as unknown as MemberRow[];
 
-  const dplName  = members.length > 0 ? (gdpl(members[0]) ?? DPL_FALLBACK.name) : DPL_FALLBACK.name;
-  const dplPhoto = members.length > 0 ? gdplPhoto(members[0]) : null;
+  // Urutkan: Ketua → Sekretaris → Bendahara → lainnya
+  const members = [...rawMembers].sort((a, b) => {
+    const ai = DIVISION_ORDER.indexOf(a.division);
+    const bi = DIVISION_ORDER.indexOf(b.division);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+
+  const dplName  = rawMembers.length > 0 ? (gdpl(rawMembers[0]) ?? DPL.name) : DPL.name;
+  const dplPhoto = rawMembers.length > 0 ? gdplPhoto(rawMembers[0]) : null;
 
   return (
     <section id="tim" className="py-24 sm:py-32" style={{ background:"#0b1121" }} ref={ref}>
@@ -48,70 +84,37 @@ export default function TeamSection() {
           </p>
         </motion.div>
 
-        {/* ── Box DPL — selalu muncul ── */}
-        <motion.div initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay:0.1 }}
-          style={{ maxWidth:480, margin:"0 auto 48px" }}>
-          <div style={{
-            background:"linear-gradient(135deg, rgba(16,185,129,0.07), rgba(6,182,212,0.07))",
-            border:"1px solid rgba(16,185,129,0.25)",
-            borderRadius:24,
-            padding:"32px 24px",
-            textAlign:"center",
-          }}>
-            <p style={{ fontSize:11, fontWeight:700, color:"#34d399", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:20 }}>
-              Dosen Pembimbing Lapangan
-            </p>
-
-            {/* Foto DPL — besar, fallback ikon */}
+        {/* ── Card DPL — sama persis seperti kartu anggota ── */}
+        <motion.div initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay:0.05 }}
+          style={{ maxWidth:220, margin:"0 auto 48px" }}>
+          <div className="bg-[#111b2e] border border-emerald-500/30 rounded-2xl overflow-hidden shadow-lg shadow-emerald-900/20">
+            {/* Foto DPL */}
             {dplPhoto ? (
-              <div style={{ width:128, height:128, borderRadius:24, overflow:"hidden", border:"3px solid rgba(16,185,129,0.4)", margin:"0 auto 16px", boxShadow:"0 8px 32px rgba(16,185,129,0.15)" }}>
-                <img src={dplPhoto} alt="DPL" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+              <div style={{ width:"100%", aspectRatio:"3/4", overflow:"hidden", background:"#0d1525" }}>
+                <img src={dplPhoto} alt="DPL"
+                  style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top" }} />
               </div>
             ) : (
-              <div style={{ width:128, height:128, borderRadius:24, background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px", boxShadow:"0 8px 32px rgba(16,185,129,0.15)" }}>
-                <GraduationCap style={{ width:56, height:56, color:"#fff" }} />
+              <div style={{ width:"100%", aspectRatio:"3/4", background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <GraduationCap style={{ width:64, height:64, color:"#fff" }} />
               </div>
             )}
-
             {/* Keterangan DPL */}
-            <p style={{ color:"#fff", fontWeight:800, fontSize:16, marginBottom:6, lineHeight:1.4 }}>{dplName}</p>
-            <p style={{ color:"#64748b", fontSize:12, marginBottom:4 }}>{DPL_FALLBACK.nip}</p>
-            <p style={{ color:"#94a3b8", fontSize:13 }}>{DPL_FALLBACK.info}</p>
+            <div style={{ padding:"14px 16px", textAlign:"center" }}>
+              <p style={{ fontSize:10, fontWeight:700, color:"#34d399", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:6 }}>
+                Dosen Pembimbing Lapangan
+              </p>
+              <p style={{ color:"#fff", fontWeight:700, fontSize:13, lineHeight:1.4, marginBottom:4 }}>{dplName}</p>
+              <p style={{ color:"#64748b", fontSize:11, marginBottom:2 }}>{DPL.nip}</p>
+              <p style={{ color:"#94a3b8", fontSize:11 }}>{DPL.info}</p>
+            </div>
           </div>
         </motion.div>
 
-        {/* ── Grid Anggota — card besar, foto full width ── */}
+        {/* ── Grid Anggota — 4 kolom, urut Ketua → Sek → Ben → lainnya ── */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:20 }} className="max-sm:!grid-cols-2 max-md:!grid-cols-2">
           {members.map((m, i) => (
-            <motion.div key={m.id}
-              initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay: 0.15 + i * 0.05 }}
-              onClick={() => setSelected(m)}
-              className="bg-[#111b2e] border border-white/[0.06] rounded-2xl overflow-hidden cursor-pointer hover:border-emerald-500/40 hover:shadow-xl hover:shadow-emerald-900/20 transition-all group">
-
-              {/* Foto full width */}
-              {m.photo_url ? (
-                <div style={{ width:"100%", aspectRatio:"3/4", overflow:"hidden", background:"#0d1525" }}>
-                  <img src={m.photo_url} alt={m.name}
-                    className="group-hover:scale-105 transition-transform duration-300"
-                    style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top" }} />
-                </div>
-              ) : (
-                <div className={cn("w-full bg-gradient-to-br flex items-center justify-center text-white font-black", gc(m))}
-                  style={{ aspectRatio:"3/4", fontSize:56 }}>
-                  {gi(m)}
-                </div>
-              )}
-
-              {/* Keterangan di bawah foto */}
-              <div style={{ padding:"16px", textAlign:"center" }}>
-                <p className="text-white font-bold text-sm group-hover:text-emerald-400 transition-colors line-clamp-1 mb-1">{m.name}</p>
-                <p className="text-xs text-emerald-400 font-medium mb-1">{m.role}</p>
-                <p className="text-[11px] text-slate-500 font-mono">{m.nim}</p>
-                {m.quote && (
-                  <p className="text-[10px] text-slate-400 italic mt-2 line-clamp-2 leading-relaxed">&ldquo;{m.quote}&rdquo;</p>
-                )}
-              </div>
-            </motion.div>
+            <MemberCard key={m.id} m={m} i={i} v={v} onClick={() => setSelected(m)} />
           ))}
         </div>
 
@@ -133,7 +136,8 @@ export default function TeamSection() {
               <div className="px-6 pb-6 -mt-12 text-center">
                 {selected.photo_url ? (
                   <div className="w-24 h-24 mx-auto rounded-2xl overflow-hidden border-4 border-[#111b2e] shadow-xl">
-                    <img src={selected.photo_url} alt={selected.name} style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top" }} />
+                    <img src={selected.photo_url} alt={selected.name}
+                      style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top" }} />
                   </div>
                 ) : (
                   <div className={cn("w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-black text-3xl border-4 border-[#111b2e]", gc(selected))}>
