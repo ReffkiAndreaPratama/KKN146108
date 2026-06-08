@@ -11,7 +11,7 @@ const INFO = [
   { label: "Kecamatan", value: "Kelam Tengah" },
   { label: "Kabupaten", value: "Kaur" },
   { label: "Provinsi", value: "Bengkulu" },
-  { label: "Koordinat", value: "-4.7°LS, 103.5°BT" },
+  { label: "Koordinat", value: "4°34'24.2\"S 103°12'25.4\"E" },
 ];
 
 const POTENSI = [
@@ -75,8 +75,8 @@ export default function TentangDesaSection() {
           <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
             <motion.div initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay:.25 }}
               style={{ background:"#111b2e", border:"1px solid rgba(255,255,255,0.06)", borderRadius:20, padding:12, flex:1, minHeight:200, overflow:"hidden" }}>
-              <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d63752.48!2d103.4!3d-4.65!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e1f5b5b5b5b5b5b%3A0x0!2sKelam+Tengah%2C+Kaur%2C+Bengkulu!5e0!3m2!1sid!2sid!4v1234567890"
-                width="100%" height="100%" style={{ borderRadius:12, border:"none" }} allowFullScreen loading="lazy" title="Map" />
+              <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3981.234!2d103.20697!3d-4.57339!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwMzQnMjQuMiJTIDEwM8KwMTInMjUuNCJF!5e0!3m2!1sid!2sid!4v1700000000000"
+                width="100%" height="100%" style={{ borderRadius:12, border:"none" }} allowFullScreen loading="lazy" title="Peta Desa Talang Marap" />
             </motion.div>
             <motion.div initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay:.3 }}
               style={{ background:"#111b2e", border:"1px solid rgba(255,255,255,0.06)", borderRadius:20, padding:32 }}>
