@@ -261,18 +261,7 @@ insert into proker (name, description, category, ketua_pelaksana, anggota, start
 on conflict do nothing;
 
 -- ─── SEED DATA — TRANSACTIONS ────────────────────────────────
-insert into transactions (type, description, amount, date, category, created_by) values
-  ('income',  'Iuran Anggota - Bulan Juni',  1600000, '2026-05-20', 'Iuran',        'Bella Alfia'),
-  ('income',  'Iuran Pangan Minggu 1',       1400000, '2026-06-01', 'Iuran Pangan', 'Bella Alfia'),
-  ('expense', 'Sewa Mobil Keberangkatan',    1600000, '2026-05-28', 'Transportasi', 'Bella Alfia'),
-  ('expense', 'Sewa Posko KKN',             1500000, '2026-05-28', 'Akomodasi',    'Bella Alfia'),
-  ('expense', 'Belanja Pangan Minggu 1',     1400000, '2026-06-01', 'Konsumsi',     'Bella Alfia'),
-  ('expense', 'Kertas A4 (2 rim)',            100000, '2026-06-02', 'ATK',          'Revina Anggraeni'),
-  ('expense', 'Amplop Surat',                 30000, '2026-06-02', 'ATK',          'Revina Anggraeni'),
-  ('income',  'Iuran Pangan Minggu 2',       1400000, '2026-06-08', 'Iuran Pangan', 'Bella Alfia'),
-  ('expense', 'Belanja Pangan Minggu 2',     1400000, '2026-06-08', 'Konsumsi',     'Bella Alfia'),
-  ('expense', 'Spanduk KKN',                  150000, '2026-06-03', 'Perlengkapan', 'Reffki Andrea Pratama')
-on conflict do nothing;
+-- (kosong — isi manual via dashboard)
 
 -- ─── PIKET ───────────────────────────────────────────────────
 create table if not exists piket (
