@@ -1,5 +1,7 @@
 import { Member } from "@/types";
 
+const DPL = "Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.";
+
 export const members: Member[] = [
   {
     id: "1",
@@ -14,6 +16,7 @@ export const members: Member[] = [
     instagram: "reffki_andrea",
     color: "from-indigo-500 to-blue-600",
     initials: "RA",
+    dpl: DPL,
   },
   {
     id: "2",
@@ -28,6 +31,7 @@ export const members: Member[] = [
     instagram: "rezi_nopitri",
     color: "from-amber-500 to-orange-600",
     initials: "RN",
+    dpl: DPL,
   },
   {
     id: "3",
@@ -42,6 +46,7 @@ export const members: Member[] = [
     instagram: "pinping_kkn",
     color: "from-emerald-500 to-teal-600",
     initials: "PP",
+    dpl: DPL,
   },
   {
     id: "4",
@@ -56,6 +61,7 @@ export const members: Member[] = [
     instagram: "danil_maulana",
     color: "from-cyan-500 to-sky-600",
     initials: "MD",
+    dpl: DPL,
   },
   {
     id: "5",
@@ -70,6 +76,7 @@ export const members: Member[] = [
     instagram: "revina_anggraeni",
     color: "from-pink-500 to-rose-600",
     initials: "RA",
+    dpl: DPL,
   },
   {
     id: "6",
@@ -84,6 +91,7 @@ export const members: Member[] = [
     instagram: "ferlin_fernandes",
     color: "from-violet-500 to-purple-600",
     initials: "FF",
+    dpl: DPL,
   },
   {
     id: "7",
@@ -98,6 +106,7 @@ export const members: Member[] = [
     instagram: "hafizah_nisa",
     color: "from-fuchsia-500 to-pink-600",
     initials: "HK",
+    dpl: DPL,
   },
   {
     id: "8",
@@ -112,5 +121,6 @@ export const members: Member[] = [
     instagram: "bella_alfia",
     color: "from-rose-500 to-red-600",
     initials: "BA",
+    dpl: DPL,
   },
 ];

@@ -32,6 +32,7 @@ export interface Member {
   gender?: string;
   color?: string;
   initials?: string;
+  dpl?: string;
 }
 
 export interface Proker {

@@ -68,6 +68,12 @@ export default function TeamSection() {
                   <div className="flex justify-between"><span className="text-slate-400">NIM</span><span className="text-white font-medium">{selected.nim}</span></div>
                   <div className="flex justify-between"><span className="text-slate-400">Fakultas</span><span className="text-white font-medium">{selected.faculty}</span></div>
                   <div className="flex justify-between"><span className="text-slate-400">Prodi</span><span className="text-white font-medium">{selected.prodi}</span></div>
+                  {(selected as unknown as { dpl?: string }).dpl && (
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400 shrink-0">DPL</span>
+                      <span className="text-white font-medium text-right">{(selected as unknown as { dpl?: string }).dpl}</span>
+                    </div>
+                  )}
                 </div>
                 {selected.quote && <p className="text-sm italic text-slate-400 mt-4">&ldquo;{selected.quote}&rdquo;</p>}
                 {selected.instagram && (

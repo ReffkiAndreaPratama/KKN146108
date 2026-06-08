@@ -17,7 +17,7 @@ const btnPrimary: React.CSSProperties = { padding:"10px 18px", background:"linea
 const btnGhost: React.CSSProperties = { padding:"10px 18px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.06)", color:"#94a3b8", fontWeight:600, fontSize:13, borderRadius:10, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
 const btnDanger: React.CSSProperties = { padding:"10px 18px", background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.2)", color:"#f87171", fontWeight:600, fontSize:13, borderRadius:10, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
 
-const EMPTY: MemberPayload = { name:"", nim:"", division:"PDD", role:"", faculty:"", prodi:"", gender:"Laki-Laki", quote:"", instagram:"", whatsapp:null, photo_url:null, color:"from-emerald-500 to-teal-600", initials:"" };
+const EMPTY: MemberPayload = { name:"", nim:"", division:"PDD", role:"", faculty:"", prodi:"", gender:"Laki-Laki", quote:"", instagram:"", whatsapp:null, photo_url:null, color:"from-emerald-500 to-teal-600", initials:"", dpl:"" };
 const DIVS = ["Ketua","Sekretaris","Bendahara","Humas","Humas & Acara","Acara","PDD"];
 
 async function uploadPhoto(file: File): Promise<string | null> {
@@ -69,7 +69,7 @@ export default function AnggotaPage() {
 
   const openCreate = () => { setForm(EMPTY); setPhotoFile(null); setPhotoPreview(null); setShowForm(true); };
   const openEdit = (m: MemberRow) => {
-    setForm({ name:m.name, nim:m.nim, division:m.division, role:m.role, faculty:m.faculty, prodi:m.prodi, gender:m.gender, quote:m.quote??"", instagram:m.instagram??"", whatsapp:m.whatsapp??null, photo_url:m.photo_url??null, color:(m as any).color??"from-emerald-500 to-teal-600", initials:(m as any).initials??"" });
+    setForm({ name:m.name, nim:m.nim, division:m.division, role:m.role, faculty:m.faculty, prodi:m.prodi, gender:m.gender, quote:m.quote??"", instagram:m.instagram??"", whatsapp:m.whatsapp??null, photo_url:m.photo_url??null, color:(m as any).color??"from-emerald-500 to-teal-600", initials:(m as any).initials??"", dpl:(m as any).dpl??"" });
     setPhotoFile(null);
     setPhotoPreview(m.photo_url ?? null);
     setEditTarget(m);
@@ -131,6 +131,12 @@ export default function AnggotaPage() {
             <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, color:"#94a3b8" }}>
               <GraduationCap style={{ width:12, height:12, color:"#64748b" }} />{m.prodi}
             </div>
+            {(m as any).dpl && (
+              <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, color:"#94a3b8" }}>
+                <Users style={{ width:12, height:12, color:"#64748b" }} />
+                <span style={{ color:"#64748b", fontSize:10 }}>DPL:</span> {(m as any).dpl}
+              </div>
+            )}
             <div style={{ display:"flex", gap:8, marginTop:"auto", paddingTop:12, borderTop:"1px solid rgba(255,255,255,0.04)" }}>
               <button onClick={() => openEdit(m)} style={{ flex:1, padding:"8px 0", borderRadius:8, border:"none", background:"rgba(255,255,255,0.04)", color:"#94a3b8", fontSize:11, fontWeight:500, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
                 <Edit2 style={{ width:11, height:11 }} />Edit
@@ -184,6 +190,7 @@ export default function AnggotaPage() {
             <div><label style={labelStyle}>Instagram</label><input value={form.instagram??""} onChange={(e) => setForm({...form, instagram:e.target.value})} style={inputStyle} placeholder="username" /></div>
           </div>
           <div><label style={labelStyle}>Quote</label><input value={form.quote??""} onChange={(e) => setForm({...form, quote:e.target.value})} style={inputStyle} placeholder="Kata motivasi..." /></div>
+          <div><label style={labelStyle}>DPL (Dosen Pembimbing Lapangan)</label><input value={form.dpl??""} onChange={(e) => setForm({...form, dpl:e.target.value})} style={inputStyle} placeholder="Nama DPL" /></div>
           <div style={{ display:"flex", gap:12, paddingTop:8 }}>
             <button type="submit" disabled={createM.isPending || updateM.isPending || uploading} style={{ ...btnPrimary, flex:1, justifyContent:"center", opacity: (createM.isPending||updateM.isPending||uploading)?0.6:1 }}>
               <Save style={{ width:14, height:14 }} />{uploading?"Mengupload foto...":(createM.isPending||updateM.isPending)?"Menyimpan...":"Simpan"}

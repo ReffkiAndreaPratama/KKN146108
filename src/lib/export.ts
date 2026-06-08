@@ -61,6 +61,7 @@ export async function exportAnggotaExcel(members: MemberRow[]) {
     Fakultas: m.faculty,
     "Program Studi": m.prodi,
     "Jenis Kelamin": m.gender,
+    "DPL": (m as unknown as { dpl?: string }).dpl ?? "-",
     Instagram: m.instagram ?? "-",
   }));
   await downloadExcel(rows, "Anggota", "Anggota_KKN146");
@@ -233,20 +234,22 @@ export async function exportAnggotaPDF(members: MemberRow[]) {
 
   autoTable(doc, {
     startY,
-    head: [["No", "Nama", "NIM", "Divisi", "Fakultas", "Prodi", "JK"]],
+    head: [["No", "Nama", "NIM", "Divisi", "Fakultas", "Prodi", "JK", "DPL"]],
     body: members.map((m, i) => [
       i + 1, m.name, m.nim, m.division, m.faculty, m.prodi,
       m.gender === "Perempuan" ? "P" : "L",
+      (m as unknown as { dpl?: string }).dpl ?? "-",
     ]),
     ...tableStyles,
     columnStyles: {
       0: { cellWidth: 8 },
-      1: { cellWidth: 45 },
-      2: { cellWidth: 22 },
-      3: { cellWidth: 22 },
-      4: { cellWidth: 40 },
-      5: { cellWidth: 30 },
+      1: { cellWidth: 38 },
+      2: { cellWidth: 20 },
+      3: { cellWidth: 18 },
+      4: { cellWidth: 32 },
+      5: { cellWidth: 26 },
       6: { cellWidth: 8 },
+      7: { cellWidth: 30 },
     },
   });
 

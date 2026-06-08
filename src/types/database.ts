@@ -19,6 +19,7 @@ export interface Database {
           photo_url: string | null;
           color: string;
           initials: string;
+          dpl: string | null;
           created_at: string;
           updated_at: string;
         };

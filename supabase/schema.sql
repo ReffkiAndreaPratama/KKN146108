@@ -1,6 +1,6 @@
 -- ============================================================
 -- KKN 146 Desa Talang Marap — Supabase Schema
--- Jalankan di Supabase SQL Editor
+-- Aman dijalankan berulang kali (idempotent)
 -- ============================================================
 
 -- Enable UUID extension
@@ -22,9 +22,13 @@ create table if not exists members (
   photo_url    text,
   color        text not null default 'from-emerald-500 to-cyan-500',
   initials     text not null,
+  dpl          text,
   created_at   timestamptz default now(),
   updated_at   timestamptz default now()
 );
+
+-- Migrasi: tambah kolom dpl jika belum ada (untuk database lama)
+alter table members add column if not exists dpl text;
 
 -- ─── PROKER ─────────────────────────────────────────────────
 create table if not exists proker (
@@ -88,9 +92,11 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists members_updated_at on members;
 create trigger members_updated_at before update on members
   for each row execute function update_updated_at();
 
+drop trigger if exists proker_updated_at on proker;
 create trigger proker_updated_at before update on proker
   for each row execute function update_updated_at();
 
@@ -102,6 +108,12 @@ alter table journal      enable row level security;
 alter table attendance   enable row level security;
 
 -- Public read
+drop policy if exists "public read members"      on members;
+drop policy if exists "public read proker"       on proker;
+drop policy if exists "public read transactions" on transactions;
+drop policy if exists "public read journal"      on journal;
+drop policy if exists "public read attendance"   on attendance;
+
 create policy "public read members"      on members      for select using (true);
 create policy "public read proker"       on proker       for select using (true);
 create policy "public read transactions" on transactions  for select using (true);
@@ -109,6 +121,12 @@ create policy "public read journal"      on journal      for select using (true)
 create policy "public read attendance"   on attendance   for select using (true);
 
 -- Anon write (demo — ganti dengan auth di production)
+drop policy if exists "anon write members"      on members;
+drop policy if exists "anon write proker"       on proker;
+drop policy if exists "anon write transactions" on transactions;
+drop policy if exists "anon write journal"      on journal;
+drop policy if exists "anon write attendance"   on attendance;
+
 create policy "anon write members"      on members      for all using (true) with check (true);
 create policy "anon write proker"       on proker       for all using (true) with check (true);
 create policy "anon write transactions" on transactions  for all using (true) with check (true);
@@ -116,15 +134,15 @@ create policy "anon write journal"      on journal      for all using (true) wit
 create policy "anon write attendance"   on attendance   for all using (true) with check (true);
 
 -- ─── SEED DATA — MEMBERS ─────────────────────────────────────
-insert into members (name, nim, division, role, faculty, prodi, gender, quote, instagram, color, initials) values
-  ('Reffki Andrea Pratama',                        'G1A023039', 'PDD',           'Koordinator PDD',         'Fakultas Teknik',                       'Informatika',                      'Laki-Laki', 'Setiap momen berharga untuk diabadikan.',             'reffki_andrea',    'from-indigo-500 to-blue-600',   'RA'),
-  ('Rezi Nopitri Yadi',                            'E1C023048', 'Humas & Acara', 'Humas & Koordinator Acara','Fakultas Pertanian',                    'Peternakan',                       'Laki-Laki', 'Setiap acara adalah kenangan yang tak terlupakan.',   'rezi_nopitri',     'from-amber-500 to-orange-600',  'RN'),
-  ('Muhammad Pin Ping Anugerah Hariah Tama Putra', 'G1B023087', 'Ketua',         'Ketua KKN 146',           'Fakultas Teknik',                       'Teknik Sipil',                     'Laki-Laki', 'Memimpin dengan hati, membangun dengan karya.',       'pinping_kkn',      'from-emerald-500 to-teal-600',  'PP'),
-  ('Maulana Ahmad Danil',                          'CIA023063', 'Humas',         'Humas',                   'Fakultas Ekonomi dan Bisnis',           'Ekonomi Pembangunan',              'Laki-Laki', 'Komunikasi adalah kunci keberhasilan.',               'danil_maulana',    'from-cyan-500 to-sky-600',      'MD'),
-  ('Revina Anggraeni',                             'A1A023051', 'Sekretaris',    'Sekretaris',              'Fakultas Keguruan dan Ilmu Pendidikan', 'Pendidikan Bahasa Indonesia',      'Perempuan', 'Administrasi rapi, kegiatan lancar.',                 'revina_anggraeni', 'from-pink-500 to-rose-600',     'RA'),
-  ('Ferlin Fernandes',                             'D1B023062', 'PDD',           'Anggota PDD',             'Fakultas Ilmu Sosial dan Ilmu Politik', 'Perpustakaan dan Sains Informasi', 'Perempuan', 'Dokumentasi terbaik untuk kenangan abadi.',           'ferlin_fernandes', 'from-violet-500 to-purple-600', 'FF'),
-  ('Hafizah Khairannisa',                          'BIA023221', 'Acara',         'Koordinator Acara',       'Fakultas Hukum',                        'Ilmu Hukum',                       'Perempuan', 'Kreativitas tanpa batas untuk desa yang lebih baik.', 'hafizah_nisa',     'from-fuchsia-500 to-pink-600',  'HK'),
-  ('Bella Alfia',                                  'C1B023105', 'Bendahara',     'Bendahara',               'Fakultas Ekonomi dan Bisnis',           'Manajemen',                        'Perempuan', 'Keuangan transparan, kepercayaan terjaga.',           'bella_alfia',      'from-rose-500 to-red-600',      'BA')
+insert into members (name, nim, division, role, faculty, prodi, gender, quote, instagram, color, initials, dpl) values
+  ('Reffki Andrea Pratama',                        'G1A023039', 'PDD',           'Koordinator PDD',         'Fakultas Teknik',                       'Informatika',                      'Laki-Laki', 'Setiap momen berharga untuk diabadikan.',             'reffki_andrea',    'from-indigo-500 to-blue-600',   'RA', 'Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.'),
+  ('Rezi Nopitri Yadi',                            'E1C023048', 'Humas & Acara', 'Humas & Koordinator Acara','Fakultas Pertanian',                    'Peternakan',                       'Laki-Laki', 'Setiap acara adalah kenangan yang tak terlupakan.',   'rezi_nopitri',     'from-amber-500 to-orange-600',  'RN', 'Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.'),
+  ('Muhammad Pin Ping Anugerah Hariah Tama Putra', 'G1B023087', 'Ketua',         'Ketua KKN 146',           'Fakultas Teknik',                       'Teknik Sipil',                     'Laki-Laki', 'Memimpin dengan hati, membangun dengan karya.',       'pinping_kkn',      'from-emerald-500 to-teal-600',  'PP', 'Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.'),
+  ('Maulana Ahmad Danil',                          'CIA023063', 'Humas',         'Humas',                   'Fakultas Ekonomi dan Bisnis',           'Ekonomi Pembangunan',              'Laki-Laki', 'Komunikasi adalah kunci keberhasilan.',               'danil_maulana',    'from-cyan-500 to-sky-600',      'MD', 'Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.'),
+  ('Revina Anggraeni',                             'A1A023051', 'Sekretaris',    'Sekretaris',              'Fakultas Keguruan dan Ilmu Pendidikan', 'Pendidikan Bahasa Indonesia',      'Perempuan', 'Administrasi rapi, kegiatan lancar.',                 'revina_anggraeni', 'from-pink-500 to-rose-600',     'RA', 'Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.'),
+  ('Ferlin Fernandes',                             'D1B023062', 'PDD',           'Anggota PDD',             'Fakultas Ilmu Sosial dan Ilmu Politik', 'Perpustakaan dan Sains Informasi', 'Perempuan', 'Dokumentasi terbaik untuk kenangan abadi.',           'ferlin_fernandes', 'from-violet-500 to-purple-600', 'FF', 'Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.'),
+  ('Hafizah Khairannisa',                          'BIA023221', 'Acara',         'Koordinator Acara',       'Fakultas Hukum',                        'Ilmu Hukum',                       'Perempuan', 'Kreativitas tanpa batas untuk desa yang lebih baik.', 'hafizah_nisa',     'from-fuchsia-500 to-pink-600',  'HK', 'Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.'),
+  ('Bella Alfia',                                  'C1B023105', 'Bendahara',     'Bendahara',               'Fakultas Ekonomi dan Bisnis',           'Manajemen',                        'Perempuan', 'Keuangan transparan, kepercayaan terjaga.',           'bella_alfia',      'from-rose-500 to-red-600',      'BA', 'Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.')
 on conflict (nim) do nothing;
 
 -- ─── SEED DATA — PROKER ──────────────────────────────────────
@@ -175,7 +193,8 @@ insert into proker (name, description, category, ketua_pelaksana, anggota, start
    'Pelatihan penggunaan komputer dasar untuk perangkat desa dan masyarakat umum.',
    'teknologi', 'Ferlin Fernandes',
    ARRAY['Reffki Andrea Pratama','Muhammad Pin Ping Anugerah Hariah Tama Putra'],
-   '2026-06-20', '2026-07-05', '20 peserta', 0, 'planning');
+   '2026-06-20', '2026-07-05', '20 peserta', 0, 'planning')
+on conflict do nothing;
 
 -- ─── SEED DATA — TRANSACTIONS ────────────────────────────────
 insert into transactions (type, description, amount, date, category, created_by) values
@@ -188,4 +207,11 @@ insert into transactions (type, description, amount, date, category, created_by)
   ('expense', 'Amplop Surat',                 30000, '2026-06-02', 'ATK',          'Revina Anggraeni'),
   ('income',  'Iuran Pangan Minggu 2',       1400000, '2026-06-08', 'Iuran Pangan', 'Bella Alfia'),
   ('expense', 'Belanja Pangan Minggu 2',     1400000, '2026-06-08', 'Konsumsi',     'Bella Alfia'),
-  ('expense', 'Spanduk KKN',                  150000, '2026-06-03', 'Perlengkapan', 'Reffki Andrea Pratama');
+  ('expense', 'Spanduk KKN',                  150000, '2026-06-03', 'Perlengkapan', 'Reffki Andrea Pratama')
+on conflict do nothing;
+
+-- ─── UPDATE DPL untuk data yang sudah ada ────────────────────
+-- Jalankan ini jika anggota sudah ada di database tapi dpl masih NULL
+update members
+set dpl = 'Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.'
+where dpl is null;

@@ -20,6 +20,7 @@ export interface MemberPayload {
   photo_url?: string | null;
   color: string;
   initials: string;
+  dpl?: string | null;
 }
 
 export function useMembers() {
