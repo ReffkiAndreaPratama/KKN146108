@@ -141,6 +141,20 @@ export interface Database {
         Insert: Omit<Database["public"]["Tables"]["inventaris"]["Row"], "id" | "created_at" | "updated_at"> & { id?: string };
         Update: Partial<Database["public"]["Tables"]["inventaris"]["Insert"]>;
       };
+      piket: {
+        Row: {
+          id: string;
+          date: string;
+          members: string[];
+          tasks: string[];
+          completed: boolean;
+          note: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["piket"]["Row"], "id" | "created_at" | "updated_at"> & { id?: string };
+        Update: Partial<Database["public"]["Tables"]["piket"]["Insert"]>;
+      };
     };
   };
 }
@@ -169,3 +183,6 @@ export type ArsipRow          = Database["public"]["Tables"]["arsip"]["Row"];
 export type ArsipInsert       = Database["public"]["Tables"]["arsip"]["Insert"];
 export type InventarisRow     = Database["public"]["Tables"]["inventaris"]["Row"];
 export type InventarisInsert  = Database["public"]["Tables"]["inventaris"]["Insert"];
+
+export type PiketRow    = Database["public"]["Tables"]["piket"]["Row"];
+export type PiketInsert = Database["public"]["Tables"]["piket"]["Insert"];

@@ -274,6 +274,28 @@ insert into transactions (type, description, amount, date, category, created_by)
   ('expense', 'Spanduk KKN',                  150000, '2026-06-03', 'Perlengkapan', 'Reffki Andrea Pratama')
 on conflict do nothing;
 
+-- ─── PIKET ───────────────────────────────────────────────────
+create table if not exists piket (
+  id          uuid primary key default uuid_generate_v4(),
+  date        date not null unique,
+  members     text[] not null default '{}',
+  tasks       text[] not null default '{}',
+  completed   boolean not null default false,
+  note        text,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+
+alter table piket enable row level security;
+drop policy if exists "public read piket" on piket;
+drop policy if exists "anon write piket"  on piket;
+create policy "public read piket" on piket for select using (true);
+create policy "anon write piket"  on piket for all using (true) with check (true);
+
+drop trigger if exists piket_updated_at on piket;
+create trigger piket_updated_at before update on piket
+  for each row execute function update_updated_at();
+
 -- ─── UPDATE DPL untuk data yang sudah ada ────────────────────
 -- Jalankan ini jika anggota sudah ada di database tapi dpl masih NULL
 update members
