@@ -129,44 +129,56 @@ export default function TeamSection() {
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
             onClick={() => setSelected(null)}>
-            <motion.div initial={{ scale:.9 }} animate={{ scale:1 }} exit={{ scale:.9 }}
-              className="bg-[#111b2e] border border-white/[0.08] rounded-2xl w-full max-w-sm overflow-hidden"
+            <motion.div initial={{ scale:.9, y:16 }} animate={{ scale:1, y:0 }} exit={{ scale:.9, y:16 }}
+              className="bg-[#111b2e] border border-white/[0.08] rounded-2xl w-full max-w-xs overflow-hidden shadow-2xl"
               onClick={(e) => e.stopPropagation()}>
-              <div className={cn("h-24 bg-gradient-to-br", gc(selected))} />
-              <div className="px-6 pb-6 -mt-12 text-center">
-                {selected.photo_url ? (
-                  <div className="w-24 h-24 mx-auto rounded-2xl overflow-hidden border-4 border-[#111b2e] shadow-xl">
-                    <img src={selected.photo_url} alt={selected.name}
-                      style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top" }} />
-                  </div>
-                ) : (
-                  <div className={cn("w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-black text-3xl border-4 border-[#111b2e]", gc(selected))}>
-                    {gi(selected)}
-                  </div>
-                )}
-                <h3 className="text-white font-bold text-lg mt-3">{selected.name}</h3>
-                <p className="text-emerald-400 text-sm">{selected.role}</p>
-                <div className="mt-4 space-y-2 text-left bg-white/[0.03] rounded-xl p-4 text-sm">
-                  <div className="flex justify-between"><span className="text-slate-400">NIM</span><span className="text-white font-medium">{selected.nim}</span></div>
-                  <div className="flex justify-between gap-3"><span className="text-slate-400 shrink-0">Fakultas</span><span className="text-white font-medium text-right">{selected.faculty}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">Prodi</span><span className="text-white font-medium text-right">{selected.prodi}</span></div>
-                  {gdpl(selected) && (
-                    <div className="flex justify-between gap-3">
-                      <span className="text-slate-400 shrink-0">DPL</span>
-                      <span className="text-white font-medium text-right">{gdpl(selected)}</span>
-                    </div>
-                  )}
+
+              {/* Foto besar full width */}
+              {selected.photo_url ? (
+                <div style={{ width:"100%", aspectRatio:"4/3", overflow:"hidden" }}>
+                  <img src={selected.photo_url} alt={selected.name}
+                    style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top" }} />
                 </div>
-                {selected.quote && <p className="text-sm italic text-slate-400 mt-4">&ldquo;{selected.quote}&rdquo;</p>}
+              ) : (
+                <div className={cn("w-full bg-gradient-to-br flex items-center justify-center text-white font-black text-6xl", gc(selected))}
+                  style={{ aspectRatio:"4/3" }}>
+                  {gi(selected)}
+                </div>
+              )}
+
+              {/* Info */}
+              <div style={{ padding:"20px 20px 24px" }}>
+                <h3 className="text-white font-bold text-base leading-snug mb-1">{selected.name}</h3>
+                <p className="text-emerald-400 text-sm font-medium mb-4">{selected.role}</p>
+
+                <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                  {[
+                    { label:"NIM",      value: selected.nim },
+                    { label:"Fakultas", value: selected.faculty },
+                    { label:"Prodi",    value: selected.prodi },
+                    ...(gdpl(selected) ? [{ label:"DPL", value: gdpl(selected)! }] : []),
+                  ].map(({ label, value }) => (
+                    <div key={label} style={{ display:"flex", flexDirection:"column", gap:2, padding:"10px 12px", background:"rgba(255,255,255,0.03)", borderRadius:10, border:"1px solid rgba(255,255,255,0.05)" }}>
+                      <span style={{ fontSize:10, fontWeight:600, color:"#475569", textTransform:"uppercase", letterSpacing:"0.08em" }}>{label}</span>
+                      <span style={{ fontSize:13, color:"#f0f6ff", fontWeight:500, lineHeight:1.4 }}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {selected.quote && (
+                  <p className="text-xs italic text-slate-400 mt-4 text-center leading-relaxed">&ldquo;{selected.quote}&rdquo;</p>
+                )}
                 {selected.instagram && (
                   <a href={`https://instagram.com/${selected.instagram}`} target="_blank" rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 text-sm text-pink-400 hover:text-pink-300">
+                    className="mt-4 flex items-center justify-center gap-2 text-sm text-pink-400 hover:text-pink-300">
                     <Instagram className="w-4 h-4" />@{selected.instagram}
                   </a>
                 )}
               </div>
-              <button onClick={() => setSelected(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/30 flex items-center justify-center text-white/70 hover:text-white">
-                <X className="w-4 h-4" />
+
+              <button onClick={() => setSelected(null)}
+                style={{ position:"absolute", top:12, right:12, width:32, height:32, borderRadius:99, background:"rgba(0,0,0,0.5)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", backdropFilter:"blur(4px)" }}>
+                <X style={{ width:16, height:16, color:"#fff" }} />
               </button>
             </motion.div>
           </motion.div>
