@@ -41,8 +41,8 @@ export default function PiketSection() {
           </p>
         </motion.div>
 
-        {/* Grid 7 hari */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(7, 1fr)", gap:12 }} className="max-lg:!grid-cols-4 max-sm:!grid-cols-2">
+        {/* Grid 7 hari — 4 kolom baris 1, 3 kolom baris 2 */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:16 }} className="max-sm:!grid-cols-2">
           {weekDays.map((dateStr, i) => {
             const entry = piketMap[dateStr];
             const isToday = dateStr === todayStr;
@@ -55,60 +55,47 @@ export default function PiketSection() {
                 initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay: i * 0.05 }}
                 style={{
                   background: isToday ? "rgba(16,185,129,0.06)" : "#111b2e",
-                  border: `1px solid ${isToday ? "rgba(16,185,129,0.3)" : isDone ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.06)"}`,
-                  borderRadius: 16,
-                  padding: 16,
+                  border: `1px solid ${isToday ? "rgba(16,185,129,0.35)" : isDone ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.07)"}`,
+                  borderRadius: 20,
+                  padding: "20px 20px 18px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 10,
-                  minHeight: 160,
+                  gap: 12,
+                  minHeight: 180,
                 }}>
-
-                {/* Hari + tanggal */}
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                   <div>
-                    <p style={{ color: isToday ? "#34d399" : "#fff", fontWeight:700, fontSize:12 }}>{dayLabel}</p>
-                    <p style={{ color:"#64748b", fontSize:11, marginTop:1 }}>{dateLabel}</p>
+                    <p style={{ color: isToday ? "#34d399" : "#fff", fontWeight:700, fontSize:14 }}>{dayLabel}</p>
+                    <p style={{ color:"#64748b", fontSize:12, marginTop:2 }}>{dateLabel}</p>
                   </div>
-                  <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3 }}>
-                    {isToday && (
-                      <span style={{ padding:"2px 7px", borderRadius:99, background:"rgba(16,185,129,0.15)", color:"#34d399", fontSize:9, fontWeight:700 }}>Hari Ini</span>
-                    )}
-                    {isDone && (
-                      <CheckCircle2 style={{ width:14, height:14, color:"#34d399" }} />
-                    )}
+                  <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
+                    {isToday && <span style={{ padding:"3px 9px", borderRadius:99, background:"rgba(16,185,129,0.15)", color:"#34d399", fontSize:10, fontWeight:700 }}>Hari Ini</span>}
+                    {isDone && <CheckCircle2 style={{ width:16, height:16, color:"#34d399" }} />}
                   </div>
                 </div>
-
-                {/* Petugas */}
                 {entry && entry.members.length > 0 ? (
                   <div style={{ flex:1 }}>
-                    <p style={{ fontSize:9, fontWeight:600, color:"#475569", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>Petugas</p>
-                    <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                    <p style={{ fontSize:10, fontWeight:600, color:"#475569", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>Petugas</p>
+                    <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                       {entry.members.slice(0, 3).map((name) => (
-                        <div key={name} style={{ display:"flex", alignItems:"center", gap:6 }}>
-                          <div style={{ width:18, height:18, borderRadius:5, background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:8, fontWeight:700, flexShrink:0 }}>
-                            {name[0]}
-                          </div>
-                          <span style={{ color:"#e2e8f0", fontSize:11, lineHeight:1.2 }}>{name.split(" ")[0]}</span>
+                        <div key={name} style={{ display:"flex", alignItems:"center", gap:8 }}>
+                          <div style={{ width:22, height:22, borderRadius:6, background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:9, fontWeight:700, flexShrink:0 }}>{name[0]}</div>
+                          <span style={{ color:"#e2e8f0", fontSize:12 }}>{name.split(" ")[0]}</span>
                         </div>
                       ))}
-                      {entry.members.length > 3 && (
-                        <span style={{ color:"#475569", fontSize:10 }}>+{entry.members.length - 3} lainnya</span>
-                      )}
+                      {entry.members.length > 3 && <span style={{ color:"#475569", fontSize:11 }}>+{entry.members.length - 3} lainnya</span>}
                     </div>
                   </div>
                 ) : (
                   <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                    <p style={{ color:"#334155", fontSize:11, textAlign:"center", fontStyle:"italic" }}>Belum ada<br/>jadwal</p>
+                    <p style={{ color:"#2d3f55", fontSize:12, textAlign:"center", fontStyle:"italic" }}>Belum ada<br/>jadwal</p>
                   </div>
                 )}
-
-                {/* Tugas singkat */}
                 {entry && entry.tasks.length > 0 && (
-                  <div style={{ borderTop:"1px solid rgba(255,255,255,0.04)", paddingTop:8 }}>
-                    <p style={{ color:"#475569", fontSize:10, lineHeight:1.5, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" }}>
+                  <div style={{ borderTop:"1px solid rgba(255,255,255,0.05)", paddingTop:10 }}>
+                    <p style={{ color:"#475569", fontSize:11, lineHeight:1.6 }}>
                       {entry.tasks.slice(0,2).join(" · ")}
+                      {entry.tasks.length > 2 && <span style={{ color:"#334155" }}> +{entry.tasks.length - 2}</span>}
                     </p>
                   </div>
                 )}
