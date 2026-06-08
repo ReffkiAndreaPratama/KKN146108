@@ -72,7 +72,8 @@ export default function DokumentasiDashboardPage() {
   const updateDoc  = useUpdateDokumentasi();
   const deleteDoc  = useDeleteDokumentasi();
 
-  const items: DokumentasiRow[] = (dbItems && dbItems.length > 0) ? dbItems : ITEMS_SEED;
+  const isFromDB = dbItems && dbItems.length > 0;
+  const items: DokumentasiRow[] = isFromDB ? dbItems : ITEMS_SEED;
 
   const [activeCat, setActiveCat] = useState("Semua");
   const [showForm,  setShowForm]  = useState(false);
@@ -192,7 +193,8 @@ export default function DokumentasiDashboardPage() {
                 <span style={{ padding:"3px 8px", borderRadius:6, fontSize:10, fontWeight:600, background: CAT_COLORS[item.category] ?? "rgba(100,116,139,0.1)", color: CAT_TEXT[item.category] ?? "#94a3b8" }}>{item.category}</span>
                 <span style={{ fontSize:11, color:"#64748b" }}>{item.date ? formatDate(item.date) : ""}</span>
               </div>
-              {/* Actions */}
+              {/* Actions — hanya tampil untuk data dari DB */}
+              {isFromDB && (
               <div style={{ display:"flex", gap:6, marginTop:"auto", paddingTop:8, borderTop:"1px solid rgba(255,255,255,0.04)" }}>
                 <button onClick={() => openEdit(item)}
                   style={{ flex:1, padding:"7px 0", borderRadius:8, border:"none", background:"rgba(255,255,255,0.04)", color:"#94a3b8", fontSize:11, fontWeight:500, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
@@ -203,6 +205,7 @@ export default function DokumentasiDashboardPage() {
                   <Trash2 style={{ width:12, height:12 }} />
                 </button>
               </div>
+              )}
             </div>
           </div>
         ))}
