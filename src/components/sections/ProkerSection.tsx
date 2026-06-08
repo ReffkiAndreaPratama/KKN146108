@@ -32,7 +32,11 @@ export default function ProkerSection() {
   const [fCat, setFCat] = useState("all");
 
   const { data: dbProker } = useProker();
-  const proker = (dbProker ?? seedProker) as unknown as ProkerRow[];
+  // Prioritas DB, fallback seed — dedup berdasarkan nama untuk hindari duplikat
+  const rawProker = (dbProker ?? seedProker) as unknown as ProkerRow[];
+  const proker = dbProker
+    ? rawProker
+    : rawProker.filter((p, i, arr) => arr.findIndex(x => x.name === p.name) === i);
   const filtered = fCat === "all" ? proker : proker.filter((p) => p.category === fCat);
   const avg = proker.length ? Math.round(proker.reduce((a, p) => a + p.progress, 0) / proker.length) : 0;
 
