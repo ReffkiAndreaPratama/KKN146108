@@ -9,25 +9,33 @@ import { members as seedMembers } from "@/data/members";
 import { cn } from "@/lib/utils";
 import type { MemberRow } from "@/types/database";
 
-const gc = (m: MemberRow) => (m as unknown as { color?: string }).color ?? "from-emerald-500 to-cyan-500";
-const gi = (m: MemberRow) => (m as unknown as { initials?: string }).initials ?? m.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-const gdpl = (m: MemberRow) => (m as unknown as { dpl?: string | null }).dpl ?? null;
+const gc  = (m: MemberRow) => (m as any).color ?? "from-emerald-500 to-cyan-500";
+const gi  = (m: MemberRow) => (m as any).initials ?? m.name.split(" ").map((w:string)=>w[0]).join("").slice(0,2).toUpperCase();
+const gdpl = (m: MemberRow) => (m as any).dpl as string | null ?? null;
+const gdplPhoto = (m: MemberRow) => (m as any).dpl_photo_url as string | null ?? null;
+
+// Data DPL hardcoded sebagai fallback (selalu tampil)
+const DPL_FALLBACK = {
+  name: "Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.",
+  nip:  "NIP: 19700603 199903 1 001",
+  info: "Jurusan Akuntansi · FEB Universitas Bengkulu",
+};
 
 export default function TeamSection() {
   const ref = useRef(null);
-  const v = useInView(ref, { once: true, margin: "-80px" });
+  const v   = useInView(ref, { once: true, margin: "-80px" });
   const [selected, setSelected] = useState<MemberRow | null>(null);
   const { data: dbMembers } = useMembers();
   const members = (dbMembers ?? seedMembers) as unknown as MemberRow[];
 
-  const dplName = members.length > 0 ? gdpl(members[0]) : null;
-  const dplPhoto = members.length > 0 ? ((members[0] as unknown as { dpl_photo_url?: string | null }).dpl_photo_url ?? null) : null;
+  const dplName  = members.length > 0 ? (gdpl(members[0]) ?? DPL_FALLBACK.name) : DPL_FALLBACK.name;
+  const dplPhoto = members.length > 0 ? gdplPhoto(members[0]) : null;
 
   return (
     <section id="tim" className="py-24 sm:py-32" style={{ background:"#0b1121" }} ref={ref}>
       <div className="wrapper">
 
-        {/* Judul */}
+        {/* ── Judul ── */}
         <motion.div initial={{ opacity:0, y:16 }} animate={v?{opacity:1,y:0}:{}} className="text-center mb-12">
           <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-medium mb-5">
             <Users className="w-3.5 h-3.5" /> Tim KKN
@@ -40,7 +48,7 @@ export default function TeamSection() {
           </p>
         </motion.div>
 
-        {/* ── Box DPL besar di tengah ── */}
+        {/* ── Box DPL — selalu muncul ── */}
         <motion.div initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay:0.1 }}
           style={{ maxWidth:480, margin:"0 auto 48px" }}>
           <div style={{
@@ -54,61 +62,65 @@ export default function TeamSection() {
               Dosen Pembimbing Lapangan
             </p>
 
-            {/* Foto DPL besar */}
+            {/* Foto DPL — besar, fallback ikon */}
             {dplPhoto ? (
-              <div style={{ width:120, height:120, borderRadius:24, overflow:"hidden", border:"3px solid rgba(16,185,129,0.4)", margin:"0 auto 16px", boxShadow:"0 8px 32px rgba(16,185,129,0.15)" }}>
+              <div style={{ width:128, height:128, borderRadius:24, overflow:"hidden", border:"3px solid rgba(16,185,129,0.4)", margin:"0 auto 16px", boxShadow:"0 8px 32px rgba(16,185,129,0.15)" }}>
                 <img src={dplPhoto} alt="DPL" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
               </div>
             ) : (
-              <div style={{ width:120, height:120, borderRadius:24, background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px", boxShadow:"0 8px 32px rgba(16,185,129,0.15)" }}>
-                <GraduationCap style={{ width:52, height:52, color:"#fff" }} />
+              <div style={{ width:128, height:128, borderRadius:24, background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px", boxShadow:"0 8px 32px rgba(16,185,129,0.15)" }}>
+                <GraduationCap style={{ width:56, height:56, color:"#fff" }} />
               </div>
             )}
 
             {/* Keterangan DPL */}
-            <p style={{ color:"#fff", fontWeight:800, fontSize:16, marginBottom:6 }}>{dplName ?? "Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA."}</p>
-            <p style={{ color:"#64748b", fontSize:12, marginBottom:4 }}>NIP: 19700603 199903 1 001</p>
-            <p style={{ color:"#94a3b8", fontSize:13 }}>Jurusan Akuntansi · FEB Universitas Bengkulu</p>
+            <p style={{ color:"#fff", fontWeight:800, fontSize:16, marginBottom:6, lineHeight:1.4 }}>{dplName}</p>
+            <p style={{ color:"#64748b", fontSize:12, marginBottom:4 }}>{DPL_FALLBACK.nip}</p>
+            <p style={{ color:"#94a3b8", fontSize:13 }}>{DPL_FALLBACK.info}</p>
           </div>
         </motion.div>
 
-        {/* ── Grid Anggota — foto besar, keterangan bawah ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:16 }} className="max-sm:!grid-cols-2 max-md:!grid-cols-2">
+        {/* ── Grid Anggota — card besar, foto full width ── */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:20 }} className="max-sm:!grid-cols-2 max-md:!grid-cols-2">
           {members.map((m, i) => (
-            <motion.div key={m.id} initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay: 0.15 + i * 0.05 }}
+            <motion.div key={m.id}
+              initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay: 0.15 + i * 0.05 }}
               onClick={() => setSelected(m)}
-              className="bg-[#111b2e] border border-white/[0.06] rounded-2xl overflow-hidden cursor-pointer hover:border-emerald-500/30 hover:shadow-lg transition-all group">
+              className="bg-[#111b2e] border border-white/[0.06] rounded-2xl overflow-hidden cursor-pointer hover:border-emerald-500/40 hover:shadow-xl hover:shadow-emerald-900/20 transition-all group">
 
-              {/* Foto — full width, persegi */}
+              {/* Foto full width */}
               {m.photo_url ? (
-                <div style={{ width:"100%", aspectRatio:"1/1", overflow:"hidden" }}>
-                  <img src={m.photo_url} alt={m.name} style={{ width:"100%", height:"100%", objectFit:"cover", transition:"transform 0.3s" }}
-                    className="group-hover:scale-105" />
+                <div style={{ width:"100%", aspectRatio:"3/4", overflow:"hidden", background:"#0d1525" }}>
+                  <img src={m.photo_url} alt={m.name}
+                    className="group-hover:scale-105 transition-transform duration-300"
+                    style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top" }} />
                 </div>
               ) : (
-                <div className={cn("w-full bg-gradient-to-br flex items-center justify-center text-white font-black text-4xl", gc(m))}
-                  style={{ aspectRatio:"1/1" }}>
+                <div className={cn("w-full bg-gradient-to-br flex items-center justify-center text-white font-black", gc(m))}
+                  style={{ aspectRatio:"3/4", fontSize:56 }}>
                   {gi(m)}
                 </div>
               )}
 
               {/* Keterangan di bawah foto */}
-              <div style={{ padding:"14px 16px", textAlign:"center" }}>
-                <p className="text-white font-bold text-sm group-hover:text-emerald-400 transition-colors line-clamp-1">{m.name}</p>
-                <p className="text-xs text-slate-400 mt-1">{m.role}</p>
-                <p className="text-[10px] text-slate-500 font-mono mt-1">{m.nim}</p>
-                {m.quote && <p className="text-[10px] text-slate-400 italic mt-2 line-clamp-2">&ldquo;{m.quote}&rdquo;</p>}
+              <div style={{ padding:"16px", textAlign:"center" }}>
+                <p className="text-white font-bold text-sm group-hover:text-emerald-400 transition-colors line-clamp-1 mb-1">{m.name}</p>
+                <p className="text-xs text-emerald-400 font-medium mb-1">{m.role}</p>
+                <p className="text-[11px] text-slate-500 font-mono">{m.nim}</p>
+                {m.quote && (
+                  <p className="text-[10px] text-slate-400 italic mt-2 line-clamp-2 leading-relaxed">&ldquo;{m.quote}&rdquo;</p>
+                )}
               </div>
             </motion.div>
           ))}
         </div>
 
-        <p style={{ textAlign:"center", color:"#94a3b8", fontSize:14, marginTop:40 }}>
+        <p style={{ textAlign:"center", color:"#94a3b8", fontSize:14, marginTop:48 }}>
           Terdiri dari <span style={{ color:"#34d399", fontWeight:700 }}>6 Fakultas</span> — Teknik, Pertanian, Ekonomi & Bisnis, FKIP, FISIP, dan Hukum
         </p>
       </div>
 
-      {/* Modal detail anggota */}
+      {/* ── Modal detail anggota ── */}
       <AnimatePresence>
         {selected && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
@@ -117,12 +129,11 @@ export default function TeamSection() {
             <motion.div initial={{ scale:.9 }} animate={{ scale:1 }} exit={{ scale:.9 }}
               className="bg-[#111b2e] border border-white/[0.08] rounded-2xl w-full max-w-sm overflow-hidden"
               onClick={(e) => e.stopPropagation()}>
-              {/* Banner + Avatar */}
               <div className={cn("h-24 bg-gradient-to-br", gc(selected))} />
               <div className="px-6 pb-6 -mt-12 text-center">
                 {selected.photo_url ? (
                   <div className="w-24 h-24 mx-auto rounded-2xl overflow-hidden border-4 border-[#111b2e] shadow-xl">
-                    <img src={selected.photo_url} alt={selected.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                    <img src={selected.photo_url} alt={selected.name} style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top" }} />
                   </div>
                 ) : (
                   <div className={cn("w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-black text-3xl border-4 border-[#111b2e]", gc(selected))}>
@@ -133,10 +144,10 @@ export default function TeamSection() {
                 <p className="text-emerald-400 text-sm">{selected.role}</p>
                 <div className="mt-4 space-y-2 text-left bg-white/[0.03] rounded-xl p-4 text-sm">
                   <div className="flex justify-between"><span className="text-slate-400">NIM</span><span className="text-white font-medium">{selected.nim}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">Fakultas</span><span className="text-white font-medium text-right max-w-[60%]">{selected.faculty}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">Prodi</span><span className="text-white font-medium">{selected.prodi}</span></div>
+                  <div className="flex justify-between gap-3"><span className="text-slate-400 shrink-0">Fakultas</span><span className="text-white font-medium text-right">{selected.faculty}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-400">Prodi</span><span className="text-white font-medium text-right">{selected.prodi}</span></div>
                   {gdpl(selected) && (
-                    <div className="flex justify-between gap-4">
+                    <div className="flex justify-between gap-3">
                       <span className="text-slate-400 shrink-0">DPL</span>
                       <span className="text-white font-medium text-right">{gdpl(selected)}</span>
                     </div>
