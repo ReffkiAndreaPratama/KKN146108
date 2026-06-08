@@ -29,7 +29,12 @@ export function useCreateDokumentasi() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: DokumentasiPayload) => {
-      const { data, error } = await supabase.from("dokumentasi").insert(payload as never).select().single();
+      const clean = {
+        ...payload,
+        photo_url: payload.photo_url || null,
+        description: payload.description || null,
+      };
+      const { data, error } = await supabase.from("dokumentasi").insert(clean).select().single();
       if (error) throw error;
       return data as DokumentasiRow;
     },
@@ -41,7 +46,12 @@ export function useUpdateDokumentasi() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...payload }: DokumentasiPayload & { id: string }) => {
-      const { data, error } = await supabase.from("dokumentasi").update(payload as never).eq("id", id).select().single();
+      const clean = {
+        ...payload,
+        photo_url: payload.photo_url || null,
+        description: payload.description || null,
+      };
+      const { data, error } = await supabase.from("dokumentasi").update(clean).eq("id", id).select().single();
       if (error) throw error;
       return data as DokumentasiRow;
     },

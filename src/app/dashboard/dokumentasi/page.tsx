@@ -139,7 +139,8 @@ export default function DokumentasiDashboardPage() {
       setUploadError(null);
     } catch (err) {
       console.error(err);
-      setUploadError("Gagal menyimpan data. Periksa koneksi Supabase.");
+      const msg = err instanceof Error ? err.message : String(err);
+      setUploadError(`Gagal menyimpan: ${msg}`);
     }
     setUploading(false);
   };
