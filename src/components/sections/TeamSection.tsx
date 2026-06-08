@@ -44,6 +44,11 @@ export default function TeamSection() {
               <p className="text-white font-bold text-sm mb-1 group-hover:text-emerald-400 transition-colors line-clamp-1">{m.name}</p>
               <p className="text-xs text-slate-400 mb-1">{m.role}</p>
               <p className="text-[11px] text-slate-500 font-mono">{m.nim}</p>
+              {gdpl(m) && (
+                <p className="text-[10px] text-slate-500 mt-2 line-clamp-1">
+                  <span className="text-slate-600">DPL: </span>{gdpl(m)}
+                </p>
+              )}
               {m.quote && <p className="text-[11px] text-slate-400 italic mt-3 line-clamp-2">&ldquo;{m.quote}&rdquo;</p>}
             </motion.div>
           ))}
