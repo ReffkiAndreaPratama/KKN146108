@@ -17,12 +17,16 @@ const btnPrimary: React.CSSProperties = { padding:"10px 18px", background:"linea
 const btnGhost: React.CSSProperties = { padding:"10px 18px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.06)", color:"#94a3b8", fontWeight:600, fontSize:13, borderRadius:10, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
 const btnDanger: React.CSSProperties = { padding:"10px 18px", background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.2)", color:"#f87171", fontWeight:600, fontSize:13, borderRadius:10, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8 };
 
-const EMPTY: MemberPayload = { name:"", nim:"", division:"PDD", role:"", faculty:"", prodi:"", gender:"Laki-Laki", quote:"", instagram:"", whatsapp:null, photo_url:null, color:"from-emerald-500 to-teal-600", initials:"", dpl:"" };
+const EMPTY: MemberPayload = { name:"", nim:"", division:"PDD", role:"", faculty:"", prodi:"", gender:"Laki-Laki", quote:"", instagram:"", whatsapp:null, photo_url:null, color:"from-emerald-500 to-teal-600", initials:"", dpl:"", dpl_photo_url:null };
 const DIVS = ["Ketua","Sekretaris","Bendahara","Humas","Humas & Acara","Acara","PDD"];
 
-async function uploadPhoto(file: File): Promise<string | null> {
+const DPL_NAME = "Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.";
+const DPL_PRODI = "Jurusan Akuntansi · FEB Universitas Bengkulu";
+const DPL_NIP = "NIP: 19700603 199903 1 001";
+
+async function uploadPhoto(file: File, folder = "members"): Promise<string | null> {
   const ext = file.name.split(".").pop();
-  const fileName = `members/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   const { error } = await supabase.storage.from("photos").upload(fileName, file, { cacheControl: "3600", upsert: false });
   if (error) { console.error("Upload error:", error); return null; }
   const { data } = supabase.storage.from("photos").getPublicUrl(fileName);
@@ -33,7 +37,6 @@ function Avatar({ m, size = 48 }: { m: MemberRow; size?: number }) {
   const photoUrl = m.photo_url;
   const initials = (m as any).initials ?? m.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
   const color = (m as any).color ?? "from-emerald-500 to-cyan-500";
-
   if (photoUrl) {
     return (
       <div style={{ width:size, height:size, borderRadius:size > 40 ? 16 : 12, overflow:"hidden", flexShrink:0 }}>
@@ -49,7 +52,7 @@ function Avatar({ m, size = 48 }: { m: MemberRow; size?: number }) {
 }
 
 export default function AnggotaPage() {
-  const { data: dbMembers } = useMembers();
+  const { data: dbMembers, refetch } = useMembers();
   const createM = useCreateMember();
   const updateM = useUpdateMember();
   const deleteM = useDeleteMember();
@@ -64,12 +67,39 @@ export default function AnggotaPage() {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // DPL photo state
+  const [dplPhotoFile, setDplPhotoFile] = useState<File | null>(null);
+  const [dplPhotoPreview, setDplPhotoPreview] = useState<string | null>(null);
+  const [dplUploading, setDplUploading] = useState(false);
+  const dplFileRef = useRef<HTMLInputElement>(null);
+
   const all = (dbMembers ?? seedMembers) as unknown as MemberRow[];
   const filtered = all.filter((m) => m.name.toLowerCase().includes(search.toLowerCase()) || m.nim.toLowerCase().includes(search.toLowerCase()));
 
+  // Ambil dpl_photo_url dari anggota pertama (semua sama)
+  const currentDplPhoto = all.length > 0 ? (all[0] as any).dpl_photo_url as string | null : null;
+
+  const handleDplFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) { setDplPhotoFile(file); setDplPhotoPreview(URL.createObjectURL(file)); }
+  };
+
+  const handleDplPhotoSave = async () => {
+    if (!dplPhotoFile) return;
+    setDplUploading(true);
+    const url = await uploadPhoto(dplPhotoFile, "dpl");
+    if (url) {
+      // Update semua anggota dengan dpl_photo_url baru
+      await Promise.all(all.map((m) => supabase.from("members").update({ dpl_photo_url: url } as never).eq("id", m.id)));
+      await refetch();
+      setDplPhotoFile(null);
+    }
+    setDplUploading(false);
+  };
+
   const openCreate = () => { setForm(EMPTY); setPhotoFile(null); setPhotoPreview(null); setShowForm(true); };
   const openEdit = (m: MemberRow) => {
-    setForm({ name:m.name, nim:m.nim, division:m.division, role:m.role, faculty:m.faculty, prodi:m.prodi, gender:m.gender, quote:m.quote??"", instagram:m.instagram??"", whatsapp:m.whatsapp??null, photo_url:m.photo_url??null, color:(m as any).color??"from-emerald-500 to-teal-600", initials:(m as any).initials??"", dpl:(m as any).dpl??"" });
+    setForm({ name:m.name, nim:m.nim, division:m.division, role:m.role, faculty:m.faculty, prodi:m.prodi, gender:m.gender, quote:m.quote??"", instagram:m.instagram??"", whatsapp:m.whatsapp??null, photo_url:m.photo_url??null, color:(m as any).color??"from-emerald-500 to-teal-600", initials:(m as any).initials??"", dpl:(m as any).dpl??"", dpl_photo_url:(m as any).dpl_photo_url??null });
     setPhotoFile(null);
     setPhotoPreview(m.photo_url ?? null);
     setEditTarget(m);
@@ -77,22 +107,17 @@ export default function AnggotaPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
-    }
+    if (file) { setPhotoFile(file); setPhotoPreview(URL.createObjectURL(file)); }
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
-
     let photoUrl = form.photo_url;
     if (photoFile) {
       const url = await uploadPhoto(photoFile);
       if (url) photoUrl = url;
     }
-
     const payload = { ...form, photo_url: photoUrl, initials: form.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase() };
     if (editTarget) { await updateM.mutateAsync({ id: editTarget.id, ...payload }); setEditTarget(null); }
     else { await createM.mutateAsync(payload); setShowForm(false); }
@@ -103,7 +128,47 @@ export default function AnggotaPage() {
 
   return (
     <div style={{ maxWidth:1100, display:"flex", flexDirection:"column", gap:24 }}>
-      {/* Header */}
+
+      {/* ── Box DPL ── */}
+      <div style={{ ...card, padding:24, border:"1px solid rgba(16,185,129,0.2)", background:"rgba(16,185,129,0.04)" }}>
+        <p style={{ fontSize:11, fontWeight:600, color:"#34d399", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:16 }}>Dosen Pembimbing Lapangan</p>
+        <div style={{ display:"flex", alignItems:"center", gap:20, flexWrap:"wrap" }}>
+          {/* Foto DPL */}
+          <div style={{ position:"relative", flexShrink:0 }}>
+            {(dplPhotoPreview ?? currentDplPhoto) ? (
+              <div style={{ width:88, height:88, borderRadius:20, overflow:"hidden", border:"2px solid rgba(16,185,129,0.3)" }}>
+                <img src={dplPhotoPreview ?? currentDplPhoto!} alt="DPL" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+              </div>
+            ) : (
+              <div style={{ width:88, height:88, borderRadius:20, background:"rgba(255,255,255,0.04)", border:"2px dashed rgba(255,255,255,0.12)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <Camera style={{ width:28, height:28, color:"#64748b" }} />
+              </div>
+            )}
+            <button type="button" onClick={() => dplFileRef.current?.click()}
+              style={{ position:"absolute", bottom:-4, right:-4, width:28, height:28, borderRadius:99, background:"linear-gradient(135deg, #10b981, #06b6d4)", border:"3px solid #111b2e", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+              <Upload style={{ width:12, height:12, color:"#fff" }} />
+            </button>
+            <input ref={dplFileRef} type="file" accept="image/*" onChange={handleDplFileChange} style={{ display:"none" }} />
+          </div>
+
+          {/* Info DPL */}
+          <div style={{ flex:1, minWidth:200 }}>
+            <p style={{ color:"#fff", fontWeight:700, fontSize:15 }}>{DPL_NAME}</p>
+            <p style={{ color:"#64748b", fontSize:12, marginTop:4 }}>{DPL_NIP}</p>
+            <p style={{ color:"#94a3b8", fontSize:12, marginTop:2 }}>{DPL_PRODI}</p>
+          </div>
+
+          {/* Tombol simpan foto */}
+          {dplPhotoFile && (
+            <button onClick={handleDplPhotoSave} disabled={dplUploading} style={{ ...btnPrimary, opacity: dplUploading ? 0.6 : 1 }}>
+              <Save style={{ width:14, height:14 }} />
+              {dplUploading ? "Mengupload..." : "Simpan Foto DPL"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Header Anggota ── */}
       <div style={{ ...card, padding:24, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16 }}>
         <div>
           <h1 style={{ fontSize:20, fontWeight:700, color:"#fff" }}>Anggota KKN 146</h1>
@@ -118,7 +183,7 @@ export default function AnggotaPage() {
         </div>
       </div>
 
-      {/* Cards Grid */}
+      {/* ── Cards Grid Anggota ── */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:16 }} className="max-md:!grid-cols-2 max-sm:!grid-cols-1">
         {filtered.map((m) => (
           <div key={m.id} style={{ ...card, padding:20, display:"flex", flexDirection:"column", gap:12 }}>
@@ -149,10 +214,9 @@ export default function AnggotaPage() {
         ))}
       </div>
 
-      {/* Create/Edit Modal */}
+      {/* ── Create/Edit Modal ── */}
       <Modal open={showForm || !!editTarget} onClose={() => { setShowForm(false); setEditTarget(null); setPhotoFile(null); setPhotoPreview(null); }} title={editTarget ? "Edit Anggota" : "Tambah Anggota"} size="lg">
         <form onSubmit={handleSave} style={{ display:"flex", flexDirection:"column", gap:16 }}>
-          {/* Photo Upload */}
           <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
             <div style={{ position:"relative" }}>
               {photoPreview ? (
@@ -170,7 +234,7 @@ export default function AnggotaPage() {
               </button>
             </div>
             <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display:"none" }} />
-            <p style={{ fontSize:11, color:"#64748b" }}>Klik ikon untuk upload foto (opsional)</p>
+            <p style={{ fontSize:11, color:"#64748b" }}>Klik ikon untuk upload foto anggota</p>
           </div>
 
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
@@ -200,7 +264,7 @@ export default function AnggotaPage() {
         </form>
       </Modal>
 
-      {/* Delete Modal */}
+      {/* ── Delete Modal ── */}
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Anggota?" size="sm">
         <p style={{ color:"#94a3b8", fontSize:14, marginBottom:24 }}>Data anggota akan dihapus permanen.</p>
         <div style={{ display:"flex", gap:12 }}>

@@ -21,6 +21,7 @@ export interface MemberPayload {
   color: string;
   initials: string;
   dpl?: string | null;
+  dpl_photo_url?: string | null;
 }
 
 export function useMembers() {

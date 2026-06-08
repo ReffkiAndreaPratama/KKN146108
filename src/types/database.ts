@@ -20,6 +20,7 @@ export interface Database {
           color: string;
           initials: string;
           dpl: string | null;
+          dpl_photo_url: string | null;
           created_at: string;
           updated_at: string;
         };

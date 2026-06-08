@@ -22,6 +22,7 @@ export default function TeamSection() {
 
   // Ambil DPL dari anggota pertama (semua sama)
   const dplName = members.length > 0 ? gdpl(members[0]) : null;
+  const dplPhoto = members.length > 0 ? ((members[0] as unknown as { dpl_photo_url?: string | null }).dpl_photo_url ?? null) : null;
 
   return (
     <section id="tim" className="py-24 sm:py-32" style={{ background:"#0b1121" }} ref={ref}>
@@ -53,16 +54,24 @@ export default function TeamSection() {
               padding:"20px 28px",
               textAlign:"center",
             }}>
-              <p style={{ fontSize:11, fontWeight:600, color:"#34d399", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:8 }}>
+              <p style={{ fontSize:11, fontWeight:600, color:"#34d399", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:12 }}>
                 Dosen Pembimbing Lapangan
               </p>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:12 }}>
-                <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                  <GraduationCap style={{ width:22, height:22, color:"#fff" }} />
-                </div>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:16 }}>
+                {/* Foto DPL */}
+                {dplPhoto ? (
+                  <div style={{ width:64, height:64, borderRadius:16, overflow:"hidden", border:"2px solid rgba(16,185,129,0.3)", flexShrink:0 }}>
+                    <img src={dplPhoto} alt="DPL" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                  </div>
+                ) : (
+                  <div style={{ width:64, height:64, borderRadius:16, background:"linear-gradient(135deg, #10b981, #06b6d4)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <GraduationCap style={{ width:28, height:28, color:"#fff" }} />
+                  </div>
+                )}
                 <div style={{ textAlign:"left" }}>
                   <p style={{ color:"#fff", fontWeight:700, fontSize:15 }}>{dplName}</p>
-                  <p style={{ color:"#64748b", fontSize:12, marginTop:2 }}>Jurusan Akuntansi · FEB Universitas Bengkulu</p>
+                  <p style={{ color:"#94a3b8", fontSize:12, marginTop:2 }}>Jurusan Akuntansi · FEB Universitas Bengkulu</p>
+                  <p style={{ color:"#64748b", fontSize:11, marginTop:2 }}>NIP: 19700603 199903 1 001</p>
                 </div>
               </div>
             </div>

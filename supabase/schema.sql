@@ -23,12 +23,14 @@ create table if not exists members (
   color        text not null default 'from-emerald-500 to-cyan-500',
   initials     text not null,
   dpl          text,
+  dpl_photo_url text,
   created_at   timestamptz default now(),
   updated_at   timestamptz default now()
 );
 
 -- Migrasi: tambah kolom dpl jika belum ada (untuk database lama)
 alter table members add column if not exists dpl text;
+alter table members add column if not exists dpl_photo_url text;
 
 -- ─── PROKER ─────────────────────────────────────────────────
 create table if not exists proker (
