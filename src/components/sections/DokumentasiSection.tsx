@@ -4,19 +4,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { Camera, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const CATS = ["Semua", "Survey", "Rapat", "Kegiatan", "Gotong Royong", "Pendidikan", "Sosialisasi"];
 const ITEMS = [
-  { id:1, title:"Survey Lokasi KKN", cat:"Survey", date:"14 Mei 2026", color:"from-emerald-500 to-teal-400", emoji:"🗺️" },
-  { id:2, title:"Rapat Koordinasi Tim", cat:"Rapat", date:"16 Mei 2026", color:"from-cyan-500 to-blue-400", emoji:"👥" },
-  { id:3, title:"Penerimaan di Desa", cat:"Kegiatan", date:"29 Mei 2026", color:"from-violet-500 to-purple-400", emoji:"🏡" },
-  { id:4, title:"Gotong Royong Desa", cat:"Gotong Royong", date:"7 Jun 2026", color:"from-amber-500 to-orange-400", emoji:"🌿" },
-  { id:5, title:"Bimbel Anak SD", cat:"Pendidikan", date:"1 Jun 2026", color:"from-pink-500 to-rose-400", emoji:"📚" },
-  { id:6, title:"Sosialisasi Kesehatan", cat:"Sosialisasi", date:"10 Jun 2026", color:"from-red-500 to-pink-400", emoji:"🏥" },
-  { id:7, title:"Pelatihan UMKM", cat:"Kegiatan", date:"5 Jun 2026", color:"from-indigo-500 to-blue-400", emoji:"💼" },
-  { id:8, title:"Pengajian Rutin", cat:"Kegiatan", date:"3 Jun 2026", color:"from-teal-500 to-emerald-400", emoji:"🕌" },
-  { id:9, title:"Rapat Evaluasi", cat:"Rapat", date:"15 Jun 2026", color:"from-slate-500 to-gray-400", emoji:"📋" },
+  { id:1, title:"Survey Lokasi KKN", cat:"Survey", date:"14 Mei 2026", icon:"🗺️" },
+  { id:2, title:"Rapat Koordinasi Tim", cat:"Rapat", date:"16 Mei 2026", icon:"👥" },
+  { id:3, title:"Penerimaan di Desa", cat:"Kegiatan", date:"29 Mei 2026", icon:"🏡" },
+  { id:4, title:"Gotong Royong Desa", cat:"Gotong Royong", date:"7 Jun 2026", icon:"🌿" },
+  { id:5, title:"Bimbel Anak SD", cat:"Pendidikan", date:"1 Jun 2026", icon:"📚" },
+  { id:6, title:"Sosialisasi Kesehatan", cat:"Sosialisasi", date:"10 Jun 2026", icon:"🏥" },
+  { id:7, title:"Pelatihan UMKM", cat:"Kegiatan", date:"5 Jun 2026", icon:"💼" },
+  { id:8, title:"Pengajian Rutin", cat:"Kegiatan", date:"3 Jun 2026", icon:"🕌" },
+  { id:9, title:"Rapat Evaluasi", cat:"Rapat", date:"15 Jun 2026", icon:"📋" },
 ];
 
 export default function DokumentasiSection() {
@@ -50,14 +49,20 @@ export default function DokumentasiSection() {
 
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:16 }} className="max-sm:!grid-cols-1 max-md:!grid-cols-2">
           {filtered.map((item, i) => (
-            <motion.div key={item.id} initial={{ opacity:0, scale:.95 }} animate={v?{opacity:1,scale:1}:{}} transition={{ delay:i*.05 }}
-              onClick={() => setLb(i)} className="cursor-pointer group">
-              <div className={cn("relative h-40 sm:h-44 rounded-2xl overflow-hidden bg-gradient-to-br flex items-center justify-center border border-white/[0.06] group-hover:border-white/[0.12] transition-all opacity-90", item.color)}>
-                <span className="text-5xl sm:text-6xl select-none">{item.emoji}</span>
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-end p-5 opacity-0 group-hover:opacity-100">
-                  <div><p className="text-white font-bold text-sm">{item.title}</p><p className="text-white/70 text-xs">{item.date}</p></div>
-                </div>
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold text-white bg-black/30 backdrop-blur-sm">{item.cat}</span>
+            <motion.div key={item.id} initial={{ opacity:0, y:12 }} animate={v?{opacity:1,y:0}:{}} transition={{ delay:i*.05 }}
+              onClick={() => setLb(i)}
+              style={{ cursor:"pointer", background:"#111b2e", border:"1px solid rgba(255,255,255,0.06)", borderRadius:20, overflow:"hidden", transition:"border-color 0.2s" }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)")}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}>
+              {/* Placeholder area — gelap dengan ikon */}
+              <div style={{ height:160, background:"linear-gradient(135deg, #0d1a2d, #111b2e)", display:"flex", alignItems:"center", justifyContent:"center", position:"relative", borderBottom:"1px solid rgba(255,255,255,0.04)" }}>
+                <span style={{ fontSize:48, opacity:0.6 }}>{item.icon}</span>
+                <span style={{ position:"absolute", top:12, left:12, padding:"3px 10px", borderRadius:99, background:"rgba(16,185,129,0.15)", color:"#34d399", fontSize:10, fontWeight:600, border:"1px solid rgba(16,185,129,0.2)" }}>{item.cat}</span>
+              </div>
+              {/* Info */}
+              <div style={{ padding:"14px 18px" }}>
+                <p style={{ color:"#fff", fontWeight:600, fontSize:13, marginBottom:4 }}>{item.title}</p>
+                <p style={{ color:"#475569", fontSize:11 }}>{item.date}</p>
               </div>
             </motion.div>
           ))}
@@ -69,13 +74,14 @@ export default function DokumentasiSection() {
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setLb(null)}>
             <motion.div initial={{ scale:.9 }} animate={{ scale:1 }} className="max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-              <div className={cn("w-full h-72 rounded-2xl bg-gradient-to-br flex items-center justify-center mb-4", filtered[lb].color)}>
-                <span className="text-7xl">{filtered[lb].emoji}</span>
+              <div style={{ width:"100%", height:260, borderRadius:20, background:"linear-gradient(135deg, #0d1a2d, #162133)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:16, border:"1px solid rgba(255,255,255,0.06)" }}>
+                <span style={{ fontSize:72, opacity:0.7 }}>{filtered[lb].icon}</span>
               </div>
               <div className="text-center bg-[#111b2e] rounded-2xl p-5 border border-white/[0.06]">
+                <span style={{ display:"inline-block", padding:"3px 12px", borderRadius:99, background:"rgba(16,185,129,0.1)", color:"#34d399", fontSize:11, fontWeight:600, marginBottom:10, border:"1px solid rgba(16,185,129,0.2)" }}>{filtered[lb].cat}</span>
                 <p className="text-white font-bold text-xl mb-1">{filtered[lb].title}</p>
                 <p className="text-slate-400 text-sm">{filtered[lb].date}</p>
-                <p className="text-xs text-slate-500 mt-3">{lb+1} / {filtered.length}</p>
+                <p className="text-xs text-slate-600 mt-3">{lb+1} / {filtered.length}</p>
               </div>
             </motion.div>
             <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white" onClick={() => setLb(null)}><X className="w-5 h-5" /></button>
