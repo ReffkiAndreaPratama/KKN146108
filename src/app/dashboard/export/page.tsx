@@ -5,11 +5,12 @@ import { Download, FileText, Users, Rocket, DollarSign, Package, ClipboardList, 
 import { useMembers } from "@/hooks/useMembers";
 import { useProker } from "@/hooks/useProker";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useAttendance } from "@/hooks/useAttendance";
 import { members as seedMembers } from "@/data/members";
 import { prokerList as seedProker } from "@/data/proker";
 import { transactions as seedTx } from "@/data/finance";
 import { inventoryItems } from "@/data/inventory";
-import { exportAnggotaPDF, exportAnggotaExcel, exportProkerPDF, exportProkerExcel, exportKeuanganPDF, exportKeuanganExcel, exportInventarisPDF, exportInventarisExcel } from "@/lib/export";
+import { exportAnggotaPDF, exportAnggotaExcel, exportProkerPDF, exportProkerExcel, exportKeuanganPDF, exportKeuanganExcel, exportInventarisPDF, exportInventarisExcel, exportAbsensiPDF, exportAbsensiExcel } from "@/lib/export";
 import type { MemberRow, ProkerRow, TransactionRow } from "@/types/database";
 
 const card: React.CSSProperties = { background:"#111b2e", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16 };
@@ -18,15 +19,23 @@ export default function ExportPage() {
   const { data: dbMembers } = useMembers();
   const { data: dbProker } = useProker();
   const { data: dbTx } = useTransactions();
+  const { data: dbAttendance } = useAttendance();
   const members = (dbMembers ?? seedMembers) as unknown as MemberRow[];
   const proker = (dbProker ?? seedProker) as unknown as ProkerRow[];
   const transactions = (dbTx ?? seedTx) as unknown as TransactionRow[];
+  const attendanceData = (dbAttendance ?? []).map(a => ({
+    name: a.member_name,
+    date: a.date,
+    status: a.status,
+    note: a.note,
+  }));
 
   const EXPORTS = [
-    { title:"Data Anggota", desc:`${members.length} anggota KKN 146`, icon:Users, color:"#10b981", pdfFn:() => exportAnggotaPDF(members), xlFn:() => exportAnggotaExcel(members) },
-    { title:"Program Kerja", desc:`${proker.length} program kerja`, icon:Rocket, color:"#8b5cf6", pdfFn:() => exportProkerPDF(proker), xlFn:() => exportProkerExcel(proker) },
-    { title:"Laporan Keuangan", desc:`${transactions.length} transaksi`, icon:DollarSign, color:"#06b6d4", pdfFn:() => exportKeuanganPDF(transactions), xlFn:() => exportKeuanganExcel(transactions) },
-    { title:"Inventaris", desc:`${inventoryItems.length} item perlengkapan`, icon:Package, color:"#f59e0b", pdfFn:() => exportInventarisPDF(inventoryItems), xlFn:() => exportInventarisExcel(inventoryItems) },
+    { title:"Data Anggota",     desc:`${members.length} anggota KKN 146`,      icon:Users,        color:"#10b981", pdfFn:() => exportAnggotaPDF(members),       xlFn:() => exportAnggotaExcel(members) },
+    { title:"Program Kerja",    desc:`${proker.length} program kerja`,          icon:Rocket,       color:"#8b5cf6", pdfFn:() => exportProkerPDF(proker),         xlFn:() => exportProkerExcel(proker) },
+    { title:"Laporan Keuangan", desc:`${transactions.length} transaksi`,        icon:DollarSign,   color:"#06b6d4", pdfFn:() => exportKeuanganPDF(transactions), xlFn:() => exportKeuanganExcel(transactions) },
+    { title:"Inventaris",       desc:`${inventoryItems.length} item`,           icon:Package,      color:"#f59e0b", pdfFn:() => exportInventarisPDF(inventoryItems), xlFn:() => exportInventarisExcel(inventoryItems) },
+    { title:"Absensi",          desc:`${attendanceData.length} data absensi`,   icon:ClipboardList,color:"#ec4899", pdfFn:() => exportAbsensiPDF(attendanceData), xlFn:() => exportAbsensiExcel(attendanceData) },
   ];
 
   return (
