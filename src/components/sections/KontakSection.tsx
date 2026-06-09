@@ -7,7 +7,7 @@ import { Mail, Phone, Instagram, MapPin, Send, MessageSquare, CheckCircle2 } fro
 
 const CONTACTS = [
   { icon: Mail, label: "Email", value: "kkntalangmarap@gmail.com", href: "mailto:kkntalangmarap@gmail.com" },
-  { icon: Phone, label: "WhatsApp", value: "+62 812-3456-7890", href: "https://wa.me/6281234567890" },
+  { icon: Phone, label: "WhatsApp", value: "+62 895-2380-7738", href: "https://wa.me/6289523807738" },
   { icon: Instagram, label: "Instagram", value: "@kkn146_talangmarap", href: "https://instagram.com" },
   { icon: MapPin, label: "Lokasi", value: "Desa Talang Marap, Kab. Kaur", href: "#" },
 ];
