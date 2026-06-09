@@ -14,11 +14,12 @@ import {
   StickyNote,
   X,
   Loader2,
+  Calendar,
 } from "lucide-react";
 import { useMembers } from "@/hooks/useMembers";
 import { useAttendance, useUpsertAttendance, useDeleteAttendance } from "@/hooks/useAttendance";
 import { members as seedMembers } from "@/data/members";
-import { exportAbsensiPDF } from "@/lib/export";
+import { exportAbsensiPDF, exportAbsensiExcel } from "@/lib/export";
 import type { MemberRow } from "@/types/database";
 
 /* ─── styles ─────────────────────────────────────────────── */
@@ -184,6 +185,12 @@ export default function AbsensiPage() {
   /* local override: notes typed but not yet saved — keyed by memberId */
   const [pendingNotes, setPendingNotes] = useState<Record<string, string>>({});
 
+  /* Filter rentang tanggal untuk export */
+  const [showRangeFilter, setShowRangeFilter] = useState(false);
+  const [rangeStart, setRangeStart] = useState(today);
+  const [rangeEnd, setRangeEnd]     = useState(today);
+  const [exportFormat, setExportFormat] = useState<"pdf"|"excel">("pdf");
+
   const { data: dbMembers } = useMembers();
   const allMembers = ((dbMembers ?? seedMembers) as unknown as MemberRow[]).filter(Boolean);
 
@@ -263,6 +270,32 @@ export default function AbsensiPage() {
     await exportAbsensiPDF(rows, fmtDate(date));
   }
 
+  async function handleRangeExport() {
+    // Filter semua data yang ada dalam rentang tanggal
+    const filtered = weekData
+      .filter((r) => r.date >= rangeStart && r.date <= rangeEnd)
+      .map((r) => ({
+        name: r.member_name,
+        date: r.date,
+        status: r.status,
+        note: r.note,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    if (filtered.length === 0) {
+      alert("Tidak ada data absensi pada rentang tanggal tersebut.");
+      return;
+    }
+
+    const label = `${fmtDate(rangeStart)} s/d ${fmtDate(rangeEnd)}`;
+    if (exportFormat === "pdf") {
+      await exportAbsensiPDF(filtered, label);
+    } else {
+      await exportAbsensiExcel(filtered);
+    }
+    setShowRangeFilter(false);
+  }
+
   return (
     <div style={{ maxWidth: 960, display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Header */}
@@ -273,10 +306,80 @@ export default function AbsensiPage() {
           </h1>
           <p style={{ fontSize: 13, color: "#94a3b8", marginTop: 4 }}>Rekap kehadiran anggota KKN 146</p>
         </div>
-        <button onClick={handleExport} style={btnPrimary}>
-          <Download style={{ width: 14, height: 14 }} /> Export PDF
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={handleExport} style={btnGhost}>
+            <Download style={{ width: 14, height: 14 }} /> Export Hari Ini
+          </button>
+          <button onClick={() => { setRangeStart(today); setRangeEnd(today); setShowRangeFilter(true); }} style={btnPrimary}>
+            <Calendar style={{ width: 14, height: 14 }} /> Export Rentang
+          </button>
+        </div>
       </div>
+
+      {/* Range Export Modal */}
+      {showRangeFilter && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
+          onClick={() => setShowRangeFilter(false)}>
+          <div style={{ ...card, padding:24, width:"100%", maxWidth:420 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+              <div>
+                <p style={{ color:"#fff", fontWeight:700, fontSize:15 }}>Export Absensi</p>
+                <p style={{ color:"#64748b", fontSize:12, marginTop:2 }}>Pilih rentang tanggal</p>
+              </div>
+              <button onClick={() => setShowRangeFilter(false)} style={{ ...btnGhost, padding:"6px 10px" }}>
+                <X style={{ width:14, height:14 }} />
+              </button>
+            </div>
+
+            <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <div>
+                  <label style={labelStyle}>Dari Tanggal</label>
+                  <input type="date" value={rangeStart} onChange={e => setRangeStart(e.target.value)}
+                    style={inputStyle} max={rangeEnd} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Sampai Tanggal</label>
+                  <input type="date" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)}
+                    style={inputStyle} min={rangeStart} />
+                </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Format</label>
+                <div style={{ display:"flex", gap:8 }}>
+                  {(["pdf","excel"] as const).map(fmt => (
+                    <button key={fmt} type="button" onClick={() => setExportFormat(fmt)}
+                      style={{ flex:1, padding:"10px 0", borderRadius:10, border:"1px solid", cursor:"pointer", fontSize:13, fontWeight:600,
+                        background: exportFormat===fmt ? (fmt==="pdf"?"rgba(239,68,68,0.1)":"rgba(16,185,129,0.1)") : "transparent",
+                        color: exportFormat===fmt ? (fmt==="pdf"?"#f87171":"#34d399") : "#94a3b8",
+                        borderColor: exportFormat===fmt ? (fmt==="pdf"?"rgba(239,68,68,0.3)":"rgba(16,185,129,0.3)") : "rgba(255,255,255,0.06)",
+                      }}>
+                      {fmt === "pdf" ? "📄 PDF" : "📊 Excel"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ padding:"10px 14px", background:"rgba(255,255,255,0.03)", borderRadius:10, border:"1px solid rgba(255,255,255,0.06)" }}>
+                <p style={{ color:"#94a3b8", fontSize:12 }}>
+                  Data yang diexport: semua absensi yang tercatat dari <span style={{ color:"#34d399" }}>{fmtDate(rangeStart)}</span> s/d <span style={{ color:"#34d399" }}>{fmtDate(rangeEnd)}</span>
+                </p>
+              </div>
+
+              <div style={{ display:"flex", gap:12, paddingTop:4 }}>
+                <button onClick={handleRangeExport}
+                  style={{ ...btnPrimary, flex:1, justifyContent:"center" }}>
+                  <Download style={{ width:14, height:14 }} /> Download {exportFormat.toUpperCase()}
+                </button>
+                <button onClick={() => setShowRangeFilter(false)} style={btnGhost}>
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Date nav */}
       <div style={{ ...card, padding: "12px 20px", display: "flex", alignItems: "center", gap: 12 }}>
