@@ -26,7 +26,7 @@ export default function Footer() {
             <h4 style={{ color:"#fff", fontWeight:600, fontSize:13, marginBottom:16 }}>Kontak</h4>
             <ul style={{ listStyle:"none", display:"flex", flexDirection:"column", gap:12 }}>
               <li style={{ display:"flex", alignItems:"center", gap:8, color:"#94a3b8", fontSize:13 }}><MapPin style={{ width:14, height:14, color:"#34d399" }} />Desa Talang Marap, Kab. Kaur</li>
-              <li style={{ display:"flex", alignItems:"center", gap:8, color:"#94a3b8", fontSize:13 }}><Mail style={{ width:14, height:14, color:"#34d399" }} />kkn146@unib.ac.id</li>
+              <li style={{ display:"flex", alignItems:"center", gap:8, color:"#94a3b8", fontSize:13 }}><Mail style={{ width:14, height:14, color:"#34d399" }} />kkntalangmarap@gmail.com</li>
               <li style={{ display:"flex", alignItems:"center", gap:8, color:"#94a3b8", fontSize:13 }}><Instagram style={{ width:14, height:14, color:"#34d399" }} />@kkn146_talangmarap</li>
             </ul>
           </div>

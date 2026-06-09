@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
     // ── Kirim email via Resend ──────────────────────────────
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const TO_EMAIL       = process.env.CONTACT_EMAIL ?? "kkn146@unib.ac.id";
+    const TO_EMAIL       = process.env.CONTACT_EMAIL ?? "kkntalangmarap@gmail.com";
 
     if (RESEND_API_KEY) {
       const { Resend } = await import("resend");
