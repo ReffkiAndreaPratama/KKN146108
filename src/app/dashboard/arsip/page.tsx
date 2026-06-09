@@ -267,19 +267,19 @@ export default function ArsipPage() {
                   </td>
                   <td style={{ padding:"12px 20px", color:"#94a3b8" }}>{f.uploader}</td>
                   <td style={{ padding:"12px 20px" }}>
-                    <div style={{ display:"flex", gap:6 }}>
-                      {f.file_url && f.file_url !== "#" && (
-                        <>
-                          <a href={f.file_url} target="_blank" rel="noreferrer"
-                            style={{ padding:"6px 10px", borderRadius:8, border:"none", background:"rgba(6,182,212,0.08)", color:"#22d3ee", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:4, fontSize:11, textDecoration:"none" }}>
-                            <ExternalLink style={{ width:12, height:12 }} /> Buka
-                          </a>
-                          <button onClick={() => downloadFile(f.file_url, f.name)}
-                            style={{ padding:"6px 10px", borderRadius:8, border:"none", background:"rgba(16,185,129,0.08)", color:"#34d399", cursor:"pointer", display:"flex", alignItems:"center", gap:4, fontSize:11 }}>
-                            <Download style={{ width:12, height:12 }} /> Unduh
-                          </button>
-                        </>
-                      )}
+                    <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                      <a href={f.file_url !== "#" ? f.file_url : undefined}
+                        target="_blank" rel="noreferrer"
+                        onClick={f.file_url === "#" ? (e) => e.preventDefault() : undefined}
+                        style={{ padding:"6px 10px", borderRadius:8, border:"none", background: f.file_url !== "#" ? "rgba(6,182,212,0.08)" : "rgba(255,255,255,0.03)", color: f.file_url !== "#" ? "#22d3ee" : "#334155", cursor: f.file_url !== "#" ? "pointer" : "not-allowed", display:"inline-flex", alignItems:"center", gap:4, fontSize:11, textDecoration:"none", opacity: f.file_url !== "#" ? 1 : 0.4 }}>
+                        <ExternalLink style={{ width:12, height:12 }} /> Buka
+                      </a>
+                      <button
+                        onClick={() => f.file_url !== "#" && downloadFile(f.file_url, f.name)}
+                        disabled={f.file_url === "#"}
+                        style={{ padding:"6px 10px", borderRadius:8, border:"none", background: f.file_url !== "#" ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.03)", color: f.file_url !== "#" ? "#34d399" : "#334155", cursor: f.file_url !== "#" ? "pointer" : "not-allowed", display:"flex", alignItems:"center", gap:4, fontSize:11, opacity: f.file_url !== "#" ? 1 : 0.4 }}>
+                        <Download style={{ width:12, height:12 }} /> Unduh
+                      </button>
                       <button onClick={() => openEdit(f)}
                         style={{ padding:"6px 10px", borderRadius:8, border:"none", background:"rgba(255,255,255,0.04)", color:"#94a3b8", cursor:"pointer", display:"flex", alignItems:"center", gap:4, fontSize:11 }}>
                         <Edit2 style={{ width:12, height:12 }} /> Edit
