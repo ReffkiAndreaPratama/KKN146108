@@ -1,9 +1,16 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 import type { DokumentasiRow } from "@/types/database";
 
 const KEY = ["dokumentasi"];
+
+// Untyped client khusus untuk insert/update dokumentasi
+// (menghindari TypeScript inference issue dengan generic Database type)
+const rawClient = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder"
+);
 
 export interface DokumentasiPayload {
   title: string;
@@ -14,11 +21,22 @@ export interface DokumentasiPayload {
   uploader: string;
 }
 
+function toClean(payload: DokumentasiPayload) {
+  return {
+    title: payload.title,
+    category: payload.category,
+    date: payload.date,
+    photo_url: payload.photo_url || null,
+    description: payload.description || null,
+    uploader: payload.uploader,
+  };
+}
+
 export function useDokumentasi() {
   return useQuery({
     queryKey: KEY,
     queryFn: async () => {
-      const { data, error } = await supabase.from("dokumentasi").select("*").order("date", { ascending: false });
+      const { data, error } = await rawClient.from("dokumentasi").select("*").order("date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as DokumentasiRow[];
     },
@@ -29,12 +47,7 @@ export function useCreateDokumentasi() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: DokumentasiPayload) => {
-      const clean = {
-        ...payload,
-        photo_url: payload.photo_url || null,
-        description: payload.description || null,
-      };
-      const { data, error } = await supabase.from("dokumentasi").insert(clean).select().single();
+      const { data, error } = await rawClient.from("dokumentasi").insert(toClean(payload)).select().single();
       if (error) throw error;
       return data as DokumentasiRow;
     },
@@ -46,12 +59,7 @@ export function useUpdateDokumentasi() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...payload }: DokumentasiPayload & { id: string }) => {
-      const clean = {
-        ...payload,
-        photo_url: payload.photo_url || null,
-        description: payload.description || null,
-      };
-      const { data, error } = await supabase.from("dokumentasi").update(clean).eq("id", id).select().single();
+      const { data, error } = await rawClient.from("dokumentasi").update(toClean(payload)).eq("id", id).select().single();
       if (error) throw error;
       return data as DokumentasiRow;
     },
@@ -63,7 +71,7 @@ export function useDeleteDokumentasi() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("dokumentasi").delete().eq("id", id);
+      const { error } = await rawClient.from("dokumentasi").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
