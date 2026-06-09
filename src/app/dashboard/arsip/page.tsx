@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { FolderOpen, FileText, Upload, Trash2, Plus, X, Save, File, Edit2, ExternalLink } from "lucide-react";
+import { FolderOpen, FileText, Upload, Trash2, Plus, X, Save, File, Edit2, ExternalLink, Download } from "lucide-react";
 import { useArsip, useCreateArsip, useUpdateArsip, useDeleteArsip } from "@/hooks/useArsip";
 import { Modal } from "@/components/ui/Modal";
 import { supabase } from "@/lib/supabase";
@@ -57,6 +57,23 @@ async function uploadFile(file: File): Promise<{ url: string; type: string; size
   if (error) return { error: `Upload gagal: ${error.message}` };
   const { data } = supabase.storage.from("photos").getPublicUrl(fileName);
   return { url: data.publicUrl, type: ext, size: file.size };
+}
+
+async function downloadFile(url: string, fileName: string) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  } catch {
+    // Fallback: buka di tab baru
+    window.open(url, "_blank");
+  }
 }
 
 const EMPTY_FORM = { name:"", category:"Administrasi", uploader:"Admin" };
@@ -231,11 +248,10 @@ export default function ArsipPage() {
                       <FileIcon type={f.file_type} />
                       {f.file_url && f.file_url !== "#" ? (
                         <a href={f.file_url} target="_blank" rel="noreferrer"
-                          style={{ color:"#fff", fontWeight:500, textDecoration:"none", display:"flex", alignItems:"center", gap:6 }}
+                          style={{ color:"#fff", fontWeight:500, textDecoration:"none" }}
                           onMouseEnter={e => (e.currentTarget.style.color="#34d399")}
                           onMouseLeave={e => (e.currentTarget.style.color="#fff")}>
                           {f.name}
-                          <ExternalLink style={{ width:11, height:11, opacity:0.5, flexShrink:0 }} />
                         </a>
                       ) : (
                         <span style={{ color:"#64748b", fontWeight:500 }}>{f.name}</span>
@@ -252,6 +268,18 @@ export default function ArsipPage() {
                   <td style={{ padding:"12px 20px", color:"#94a3b8" }}>{f.uploader}</td>
                   <td style={{ padding:"12px 20px" }}>
                     <div style={{ display:"flex", gap:6 }}>
+                      {f.file_url && f.file_url !== "#" && (
+                        <>
+                          <a href={f.file_url} target="_blank" rel="noreferrer"
+                            style={{ padding:"6px 10px", borderRadius:8, border:"none", background:"rgba(6,182,212,0.08)", color:"#22d3ee", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:4, fontSize:11, textDecoration:"none" }}>
+                            <ExternalLink style={{ width:12, height:12 }} /> Buka
+                          </a>
+                          <button onClick={() => downloadFile(f.file_url, f.name)}
+                            style={{ padding:"6px 10px", borderRadius:8, border:"none", background:"rgba(16,185,129,0.08)", color:"#34d399", cursor:"pointer", display:"flex", alignItems:"center", gap:4, fontSize:11 }}>
+                            <Download style={{ width:12, height:12 }} /> Unduh
+                          </button>
+                        </>
+                      )}
                       <button onClick={() => openEdit(f)}
                         style={{ padding:"6px 10px", borderRadius:8, border:"none", background:"rgba(255,255,255,0.04)", color:"#94a3b8", cursor:"pointer", display:"flex", alignItems:"center", gap:4, fontSize:11 }}>
                         <Edit2 style={{ width:12, height:12 }} /> Edit
