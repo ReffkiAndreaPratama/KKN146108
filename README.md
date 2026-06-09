@@ -1,178 +1,299 @@
-# 🌿 Sistem Informasi KKN 146 Desa Talang Marap
+# 🌿 Sistem Informasi KKN 146 — Desa Talang Marap
 
-> Website modern fullstack production-ready — KKN 146 Universitas Bengkulu
+> Website fullstack modern untuk KKN 146 Universitas Bengkulu — mencakup landing page publik dan dashboard admin lengkap.
 
-**Lokasi:** Desa Talang Marap, Kecamatan Kelam Tengah, Kabupaten Kaur, Provinsi Bengkulu  
-**Universitas:** Universitas Bengkulu — Fakultas Teknik — Informatika
+**Live:** [kkn-146108.vercel.app](https://kkn-146108.vercel.app)  
+**Lokasi KKN:** Desa Talang Marap, Kec. Kelam Tengah, Kab. Kaur, Bengkulu  
+**DPL:** Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.
+
+---
+
+## 📋 Daftar Isi
+
+- [Quick Start](#-quick-start)
+- [Login Admin](#-login-admin)
+- [Setup Database](#-setup-database-supabase)
+- [Setup Storage](#-setup-storage-upload-foto--file)
+- [Tech Stack](#-tech-stack)
+- [Struktur Project](#-struktur-project)
+- [Fitur Lengkap](#-fitur-lengkap)
+- [Deploy Vercel](#-deploy-ke-vercel)
+- [Tim KKN 146](#-tim-kkn-146)
 
 ---
 
 ## 🚀 Quick Start
 
 ```bash
-# 1. Install dependencies
-npm install --legacy-peer-deps
+# 1. Clone repository
+git clone https://github.com/ReffkiAndreaPratama/KKN146108.git
+cd KKN146108
 
-# 2. Setup environment
-cp .env.local.example .env.local
-# Edit .env.local dengan credentials Supabase kamu
+# 2. Install dependencies
+npm install
 
-# 3. Jalankan dev server
+# 3. Setup environment variables
+# Buat file .env.local dan isi sesuai contoh di bawah
+
+# 4. Jalankan development server
 npm run dev
 ```
 
 Buka **http://localhost:3000**
 
+### Environment Variables (.env.local)
+
+```env
+# Supabase — ambil dari Dashboard > Settings > API
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
+
+# Admin Dashboard
+NEXT_PUBLIC_ADMIN_USERNAME=  # isi sendiri, tidak dibagikan
+NEXT_PUBLIC_ADMIN_PASSWORD=  # isi sendiri, tidak dibagikan
+
+# Opsional — untuk form kontak email (Resend)
+# RESEND_API_KEY=re_xxxx
+# CONTACT_EMAIL=kkntalangmarap@gmail.com
+```
+
+> ⚠️ Jangan pernah commit file `.env.local` ke repository publik.
+
 ---
 
 ## 🔐 Login Admin
 
-| URL | Akses |
-|-----|-------|
-| `/` | Landing page (publik) |
+| URL | Keterangan |
+|-----|------------|
+| `/` | Landing page — dapat diakses siapa saja |
 | `/login` | Halaman login admin |
-| `/dashboard` | Dashboard (butuh login) |
+| `/dashboard` | Dashboard — hanya bisa diakses setelah login |
 
-**Default credentials** (ubah di `.env.local`):
-```
-Username: 
-Password: 
-```
+Credentials admin diset melalui environment variable `NEXT_PUBLIC_ADMIN_USERNAME` dan `NEXT_PUBLIC_ADMIN_PASSWORD` — **tidak dicantumkan di sini**.
 
 ---
 
 ## 🗄️ Setup Database (Supabase)
 
-1. Buat project di [supabase.com](https://supabase.com) (gratis)
+1. Buat project baru di [supabase.com](https://supabase.com) (gratis)
 2. Buka **SQL Editor** → **New query**
-3. Copy-paste isi `supabase/schema.sql` → **Run**
-4. Buka **Settings → API** → copy URL & anon key
-5. Isi `.env.local`:
+3. Copy seluruh isi file `supabase/schema.sql`
+4. Paste ke SQL Editor → klik **Run**
+5. Semua tabel + seed data + storage policy akan dibuat otomatis
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-NEXT_PUBLIC_ADMIN_USERNAME=admin
-NEXT_PUBLIC_ADMIN_PASSWORD=passwordkamu
+### Tabel yang Dibuat
+
+| Tabel | Fungsi |
+|-------|--------|
+| `members` | Data anggota KKN |
+| `proker` | Program kerja |
+| `transactions` | Pemasukan & pengeluaran keuangan |
+| `journal` | Jurnal harian kegiatan |
+| `attendance` | Absensi anggota per tanggal |
+| `dokumentasi` | Galeri foto kegiatan |
+| `arsip` | Arsip file digital |
+| `inventaris` | Checklist perlengkapan |
+| `piket` | Jadwal piket harian |
+
+> **Tanpa Supabase:** App tetap berjalan dengan data statis (seed data hardcoded). Semua halaman dapat diakses dan di-preview.
+
+---
+
+## 📂 Setup Storage (Upload Foto & File)
+
+Bucket storage `photos` digunakan untuk upload foto dokumentasi, foto anggota, dan arsip file.
+
+Jalankan SQL berikut di **Supabase SQL Editor** (sudah termasuk dalam `schema.sql`):
+
+```sql
+-- Buat bucket photos (public)
+insert into storage.buckets (id, name, public)
+values ('photos', 'photos', true)
+on conflict (id) do update set public = true;
+
+-- Storage policies
+create policy "Public read storage photos"
+  on storage.objects for select using (bucket_id = 'photos');
+
+create policy "Public upload storage photos"
+  on storage.objects for insert with check (bucket_id = 'photos');
+
+create policy "Public delete storage photos"
+  on storage.objects for delete using (bucket_id = 'photos');
 ```
-
-> **Tanpa Supabase:** App tetap jalan dengan data statis (seed data)
 
 ---
 
 ## 📦 Tech Stack
 
-| Layer | Tech |
-|-------|------|
-| Framework | Next.js 16 (App Router) |
-| Language | TypeScript |
-| Styling | Tailwind CSS v4 |
-| Animation | Framer Motion |
-| Charts | Recharts |
-| Icons | Lucide React |
-| State | Zustand + TanStack Query |
-| Database | Supabase (PostgreSQL) |
-| Export | jsPDF + jspdf-autotable + xlsx |
-| Auth | Session-based (Supabase ready) |
+| Layer | Teknologi | Versi |
+|-------|-----------|-------|
+| Framework | Next.js (App Router) | 16.x |
+| Language | TypeScript | 5.x |
+| Styling | Tailwind CSS | v4 |
+| Animation | Framer Motion | 11.x |
+| Charts | Recharts | 2.x |
+| Icons | Lucide React | 0.400 |
+| State Management | TanStack Query + Zustand | 5.x |
+| Database | Supabase (PostgreSQL) | — |
+| Storage | Supabase Storage | — |
+| Export PDF | jsPDF + jspdf-autotable | 4.x |
+| Export Excel | xlsx (SheetJS) | 0.18 |
+| Email | Resend (opsional) | 6.x |
+| Deploy | Vercel | — |
 
 ---
 
 ## 📁 Struktur Project
 
 ```
-src/
-├── app/
-│   ├── page.tsx              # Landing page (publik)
-│   ├── login/                # Halaman login admin
-│   ├── not-found.tsx         # 404 page
-│   └── dashboard/
-│       ├── page.tsx          # Overview analytics
-│       ├── anggota/          # CRUD anggota
-│       ├── proker/           # Program kerja (kanban + table)
-│       ├── keuangan/         # Laporan keuangan + charts
-│       ├── inventory/        # Checklist inventaris
-│       ├── arsip/            # Arsip digital (upload/download)
-│       ├── dokumentasi/      # Galeri foto
-│       ├── jurnal/           # Jurnal harian
-│       ├── absensi/          # Absensi anggota
-│       ├── piket/            # Jadwal piket otomatis
-│       └── export/           # Export semua laporan
-├── components/
-│   ├── layout/               # Navbar, Footer
-│   ├── sections/             # Landing page sections
-│   ├── dashboard/            # Sidebar, Header, AuthGuard
-│   └── ui/                   # Card, Modal, Badge, ExportButton
-├── hooks/                    # useMembers, useProker, dll
-├── lib/                      # utils, supabase, auth, export
-├── data/                     # Seed data statis
-└── types/                    # TypeScript types
+KKN146108/
+├── public/                     # Static assets
+├── supabase/
+│   ├── schema.sql              # Schema lengkap + seed data + storage policy
+│   └── README.md               # Panduan setup Supabase
+├── src/
+│   ├── app/
+│   │   ├── page.tsx            # Landing page (publik)
+│   │   ├── layout.tsx          # Root layout
+│   │   ├── not-found.tsx       # Halaman 404
+│   │   ├── globals.css         # Global styles
+│   │   ├── login/
+│   │   │   └── page.tsx        # Halaman login admin
+│   │   ├── api/
+│   │   │   └── contact/
+│   │   │       └── route.ts    # API endpoint form kontak
+│   │   └── dashboard/
+│   │       ├── layout.tsx      # Layout dashboard + sidebar
+│   │       ├── page.tsx        # Overview & analytics
+│   │       ├── anggota/        # Manajemen anggota
+│   │       ├── proker/         # Program kerja
+│   │       ├── keuangan/       # Laporan keuangan
+│   │       ├── inventory/      # Inventaris perlengkapan
+│   │       ├── arsip/          # Arsip digital
+│   │       ├── dokumentasi/    # Galeri foto
+│   │       ├── jurnal/         # Jurnal harian
+│   │       ├── absensi/        # Absensi anggota
+│   │       ├── piket/          # Jadwal piket
+│   │       └── export/         # Export laporan
+│   ├── components/
+│   │   ├── layout/             # Navbar, Footer
+│   │   ├── sections/           # Semua section landing page
+│   │   ├── dashboard/          # Sidebar, Header, AuthGuard
+│   │   ├── providers/          # QueryProvider, ThemeProvider
+│   │   └── ui/                 # Card, Modal, Badge, dll
+│   ├── hooks/                  # Custom hooks (useMembers, useProker, dll)
+│   ├── lib/                    # Utilities (supabase, auth, export, utils)
+│   ├── data/                   # Seed data statis fallback
+│   └── types/                  # TypeScript type definitions
+├── .env.local                  # Environment variables (jangan di-commit!)
+├── next.config.ts
+├── tailwind.config
+└── tsconfig.json
 ```
 
 ---
 
 ## ✨ Fitur Lengkap
 
-### Landing Page
-- Hero dengan animated gradient + countdown timer
-- Navbar sticky + dark mode + mobile responsive
-- Tentang Desa + Google Maps embed
-- Tim KKN dengan modal detail + data dari DB
-- Program Kerja dengan filter + progress bar
-- Timeline kegiatan
-- Galeri dokumentasi + lightbox
-- Laporan keuangan + charts
-- Checklist inventaris
-- Form kontak
+### 🌐 Landing Page (Publik)
 
-### Dashboard Admin (Login Required)
-- **Overview** — analytics, charts, recent activity
-- **Anggota** — CRUD lengkap, cards + table, export PDF/Excel
-- **Program Kerja** — Kanban board + table view, CRUD, export
-- **Keuangan** — Pie chart + bar chart, tambah transaksi, export
-- **Inventaris** — Checklist interaktif, filter kategori, export
-- **Arsip Digital** — Upload file, grid/list view, filter kategori
-- **Dokumentasi** — Upload foto, galeri, lightbox, filter
-- **Jurnal Harian** — CRUD catatan, filter prioritas, tags
-- **Absensi** — Navigator tanggal, toggle status, export
-- **Jadwal Piket** — Rotasi otomatis, navigator minggu
-- **Export Laporan** — Export semua laporan PDF + Excel sekaligus
+| Section | Fitur |
+|---------|-------|
+| **Hero** | Animated gradient, countdown timer, tombol CTA |
+| **Tentang Desa** | Profil desa, statistik, Google Maps embed |
+| **Tim KKN** | Grid anggota + card DPL, modal detail, data live dari DB |
+| **Program Kerja** | Filter kategori, progress bar, status badge |
+| **Timeline** | Riwayat kegiatan dengan visual timeline |
+| **Galeri** | Grid foto dengan filter kategori + lightbox |
+| **Keuangan** | Pie chart distribusi + bar chart + riwayat transaksi |
+| **Inventaris** | Checklist perlengkapan dengan status |
+| **Jadwal Piket** | Tampilan mingguan |
+| **Kontak** | Form kirim pesan + info kontak |
+
+### 🖥️ Dashboard Admin
+
+| Modul | Fitur |
+|-------|-------|
+| **Overview** | Statistik, charts, rekap kegiatan terbaru |
+| **Anggota** | CRUD lengkap, upload foto, view card/table |
+| **Program Kerja** | Kanban board + table view, CRUD, filter status |
+| **Keuangan** | Tambah transaksi, pie chart, bar chart, saldo |
+| **Inventaris** | Checklist interaktif, filter, tambah/edit/hapus |
+| **Arsip Digital** | Upload file, Buka, Unduh, Edit, Hapus |
+| **Dokumentasi** | Upload foto, galeri 4 kolom, filter kategori, CRUD |
+| **Jurnal Harian** | CRUD catatan, filter prioritas, tags |
+| **Absensi** | Navigator tanggal, toggle status, catatan, rekap mingguan |
+| **Jadwal Piket** | Navigator minggu, rotasi otomatis |
+| **Export Laporan** | Export Anggota, Proker, Keuangan, Inventaris, Absensi — PDF & Excel |
+
+### 📤 Export
+
+Semua modul mendukung export dengan desain profesional:
+- **PDF** — header KKN 146, summary box, tabel berformat, footer
+- **Excel** — kolom otomatis, sheet terpisah per modul
+- **Absensi** — filter rentang tanggal sebelum export
 
 ---
 
 ## 🌐 Deploy ke Vercel
 
-```bash
-# Install Vercel CLI
-npm i -g vercel
+### Via Vercel CLI
 
-# Deploy
+```bash
+npm i -g vercel
 vercel --prod
 ```
 
-Atau push ke GitHub → import di [vercel.com](https://vercel.com) → tambah env vars → deploy.
+### Via GitHub Integration
 
-**Environment Variables di Vercel:**
+1. Push repo ke GitHub
+2. Import project di [vercel.com](https://vercel.com/new)
+3. Tambah environment variables di **Settings → Environment Variables**:
+
 ```
 NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 NEXT_PUBLIC_ADMIN_USERNAME
 NEXT_PUBLIC_ADMIN_PASSWORD
+```
+
+4. Klik **Deploy**
+
+### Build Commands
+
+```bash
+npm run build    # Production build
+npm run dev      # Development server
+npm run lint     # ESLint check
 ```
 
 ---
 
 ## 👥 Tim KKN 146
 
-| No | Nama | NIM | Divisi |
-|----|------|-----|--------|
-| 1 | Reffki Andrea Pratama | G1A023039 | PDD |
-| 2 | Rezi Nopitri Yadi | E1C023048 | Humas & Acara |
-| 3 | Muhammad Pin Ping Anugerah... | G1B023087 | **Ketua** |
-| 4 | Maulana Ahmad Danil | CIA023063 | Humas |
-| 5 | Revina Anggraeni | A1A023051 | Sekretaris |
-| 6 | Ferlin Fernandes | D1B023062 | PDD |
-| 7 | Hafizah Khairannisa | BIA023221 | Acara |
-| 8 | Bella Alfia | C1B023105 | Bendahara |
+| No | Nama | NIM | Divisi | Jabatan |
+|----|------|-----|--------|---------|
+| 1 | Muhammad Pin Ping Anugerah H.T.P | G1B023087 | Ketua | Ketua KKN 146 |
+| 2 | Reffki Andrea Pratama | G1A023039 | PDD | Koordinator PDD |
+| 3 | Rezi Nopitri Yadi | E1C023048 | Humas & Acara | Humas & Koordinator Acara |
+| 4 | Maulana Ahmad Danil | CIA023063 | Humas | Humas |
+| 5 | Revina Anggraeni | A1A023051 | Sekretaris | Sekretaris |
+| 6 | Ferlin Fernandes | D1B023062 | PDD | Anggota PDD |
+| 7 | Hafizah Khairannisa | BIA023221 | Acara | Koordinator Acara |
+| 8 | Bella Alfia | C1B023105 | Bendahara | Bendahara |
+
+**DPL:** Dr. Baihaqi, SE., M.Si., Ak., CA., CAPM., ACPA., CERA.  
+**Universitas:** Universitas Bengkulu
+
+---
+
+## 📞 Kontak
+
+- 📧 Email: [kkntalangmarap@gmail.com](mailto:kkntalangmarap@gmail.com)
+- 📱 WhatsApp: [+62 895-2380-7738](https://wa.me/6289523807738)
+- 📸 Instagram: [@kkn146_talangmarap](https://instagram.com/kkn146_talangmarap)
+- 📍 Lokasi: Desa Talang Marap, Kec. Kelam Tengah, Kab. Kaur, Bengkulu
 
 ---
 
